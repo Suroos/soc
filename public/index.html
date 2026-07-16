@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>초축 리그 — TOP RATE</title>
+<style>
+  :root{
+    --bg:#05080f; --panel:#0b1120; --line:#1d2942; --line-2:#2a3a5e;
+    --text:#eef2fa; --muted:#7e8aa5; --dim:#4a5675;
+    --accent:#00e0b8; --danger:#ff4d6a; --gold:#ffc233;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Pretendard","Pretendard Variable",-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+    font-size:14px; line-height:1.5;
+    background-image:
+      radial-gradient(1100px 500px at 50% -10%, #0d1b33 0%, transparent 60%),
+      radial-gradient(900px 600px at 100% 110%, #081527 0%, transparent 55%);
+    background-attachment:fixed;
+  }
+  header{
+    display:flex; align-items:center; gap:14px; padding:0 20px; height:56px;
+    background:linear-gradient(180deg,#0d1526,#0a101f); border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:10;
+  }
+  .brand{display:flex; align-items:center; gap:11px; white-space:nowrap}
+  .brand .slash{width:5px; height:24px; background:var(--accent); transform:skew(-14deg);
+    box-shadow:0 0 14px 0 rgba(0,224,184,.55)}
+  .brand h1{margin:0; font-size:15px; font-weight:900; letter-spacing:-.3px}
+  .brand h1 em{font-style:normal; color:var(--accent); font-size:10px; font-weight:700;
+    letter-spacing:2px; display:block; line-height:1; margin-top:1px}
+  select.lg{
+    font:inherit; font-size:12.5px; font-weight:700; color:var(--text);
+    background:#060b16; border:1px solid var(--line-2); border-radius:7px; padding:6px 9px;
+  }
+  select.lg:focus{outline:none; border-color:var(--accent)}
+  header a{margin-left:auto; color:var(--dim); font-size:12px; font-weight:700; text-decoration:none}
+  header a:hover{color:var(--muted)}
+
+  .wrap{max-width:860px; margin:0 auto; padding:22px 18px 60px; display:flex; flex-direction:column; gap:14px}
+  .rate-head{display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap}
+  .rate-head small{display:block; font-size:10.5px; font-weight:800; letter-spacing:3px; color:var(--accent)}
+  .rate-head h2{margin:2px 0 0; font-size:27px; font-weight:900; font-style:italic; letter-spacing:-.5px}
+  .rate-head .st{margin-left:auto; color:var(--dim); font-size:12px; font-weight:700}
+  .tabs{display:flex; gap:6px}
+  .tab{font:inherit; font-size:12.5px; font-weight:800; color:var(--muted); cursor:pointer;
+    background:#0d1526; border:1px solid var(--line-2); border-radius:8px; padding:7px 20px}
+  .tab.on{color:#03150f; background:var(--accent); border-color:var(--accent); box-shadow:0 0 16px -6px var(--accent)}
+
+  .badge{display:inline-block; min-width:30px; text-align:center; font-weight:800; font-size:11px;
+    padding:2px 4px; border-radius:5px; font-variant-numeric:tabular-nums;
+    color:var(--tc); border:1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+    background:color-mix(in srgb, var(--tc) 12%, transparent)}
+  .chip{font-size:11px; font-weight:700; color:var(--muted); border-radius:5px; padding:2.5px 9px;
+    background:#0d1526; border:1px solid var(--line); font-variant-numeric:tabular-nums}
+  .chip.coin{color:var(--accent); border-color:color-mix(in srgb, var(--accent) 30%, transparent)}
+  .sicon{width:15px; height:15px; vertical-align:-2px}
+  .mini{font-size:11px; font-weight:700; color:var(--muted); border:1px solid var(--line);
+    border-radius:5px; padding:1px 7px; background:#0d1526}
+  .mini i{font-style:normal; font-weight:800; margin-right:3px; font-size:10px}
+
+  .r-row{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px;
+    font-variant-numeric:tabular-nums; cursor:pointer}
+  .r-row:hover{background:#0d1526}
+  .r-row .rk{flex:0 0 24px; text-align:right; color:var(--dim); font-weight:800; font-size:12px}
+  .r-row.top3 .rk{color:var(--gold)}
+  .r-row .nm{flex:1; font-weight:700; font-size:13.5px; min-width:0}
+  .r-row .nm .sub{display:block; font-size:11px; font-weight:600; color:var(--muted)}
+  .r-row .pt{font-weight:800; font-size:14px}
+  .r-row .dl{flex:0 0 52px; text-align:right; font-size:11.5px; font-weight:800}
+  .r-row .dl.up{color:#3ddc97} .r-row .dl.dn{color:var(--danger)} .r-row .dl.z{color:var(--dim)}
+  .r-row .rc{flex:0 0 76px; text-align:right; color:var(--muted); font-size:11px}
+  .s-cut{display:flex; align-items:center; gap:8px; color:var(--gold); font-size:10px; font-weight:800; letter-spacing:2px; margin:2px 0}
+  .s-cut::before,.s-cut::after{content:""; flex:1; height:1px; background:color-mix(in srgb, var(--gold) 35%, transparent)}
+
+  .pub-team{--tc:var(--accent);
+    border:1px solid var(--line); border-radius:12px; padding:12px 15px; margin-bottom:8px;
+    display:flex; flex-direction:column; gap:7px;
+    background:radial-gradient(300px 110px at 0% 0%, color-mix(in srgb, var(--tc) 8%, transparent), transparent 70%),
+      linear-gradient(180deg,#0a1120,#070d19)}
+  .pt-head{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .pt-head .tag{width:12px; height:12px; background:var(--tc); transform:skew(-14deg); border-radius:2px;
+    box-shadow:0 0 10px color-mix(in srgb, var(--tc) 60%, transparent)}
+  .pt-head b{font-size:15px}
+  .pt-roster{display:flex; flex-wrap:wrap; gap:4px}
+
+  .m-row{display:flex; align-items:center; gap:7px; padding:8px 10px; border-radius:8px; margin-bottom:6px;
+    border:1px solid var(--line); background:#0a1120; font-size:12px; flex-wrap:wrap}
+  .m-row .vs2{font-weight:800}
+  .m-row .res{font-size:10.5px; font-weight:800; border-radius:4px; padding:1px 6px}
+  .m-row .res.rw{color:#ff8f9e; background:rgba(255,77,106,.14)}
+  .m-row .res.bw{color:#8fc3ff; background:rgba(90,162,255,.14)}
+  .m-row .res.dr{color:var(--muted); background:#0d1526}
+  .m-row .und{color:var(--gold); font-size:10.5px; font-weight:800}
+  .m-row .lineup{width:100%; display:flex; flex-wrap:wrap; gap:4px; padding-top:2px}
+  .m-row .lineup .d{font-size:10px; font-weight:800}
+  .m-row .lineup .d.up{color:#3ddc97} .m-row .lineup .d.dn{color:var(--danger)} .m-row .lineup .d.z{color:var(--dim)}
+
+  /* 선수 상세 */
+  #modal{position:fixed; inset:0; z-index:40; display:grid; place-items:center;
+    background:rgba(3,6,12,.85); backdrop-filter:blur(3px)}
+  #modal[hidden]{display:none}
+  .modal-card{width:min(560px, 94vw); max-height:88vh; overflow-y:auto;
+    border:1px solid var(--line-2); border-radius:16px; padding:22px;
+    background:linear-gradient(180deg,#0c1322,#080d19); display:flex; flex-direction:column; gap:12px}
+  .modal-card .mc-head{display:flex; align-items:center; gap:10px}
+  .modal-card .mc-head h3{margin:0; font-size:22px; font-weight:900; flex:1}
+  .modal-card .mc-close{all:unset; cursor:pointer; color:var(--dim); font-size:16px; padding:4px 8px}
+  .modal-card .mc-close:hover{color:var(--text)}
+  .spark{width:100%; height:120px; background:rgba(0,0,0,.25); border:1px solid var(--line); border-radius:10px}
+  .empty{color:var(--dim); text-align:center; padding:40px 0; font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="slash"></span>
+    <h1 id="brand">초축 리그<em>PUBLIC</em></h1>
+  </div>
+  <select class="lg" id="lg-select" aria-label="리그 선택"></select>
+  <a href="/admin">관리자 →</a>
+</header>
+
+<div class="wrap">
+  <div class="rate-head">
+    <div><small id="lg-sub">CHOCHUK LEAGUE</small><h2 id="tab-title">🏆 TOP RATE</h2></div>
+    <span class="st" id="lg-period"></span>
+  </div>
+  <div class="tabs">
+    <button class="tab on" type="button" data-tab="rate">TOP RATE</button>
+    <button class="tab" type="button" data-tab="teams">팀 순위</button>
+    <button class="tab" type="button" data-tab="log">경기 로그</button>
+  </div>
+  <div id="content"><div class="empty">불러오는 중…</div></div>
+</div>
+
+<div id="modal" hidden>
+  <div class="modal-card" id="modal-card"></div>
+</div>
+
+<script src="/engine.js"></script>
+<script>
+"use strict";
+const E = Engine;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const TIER_COLOR = {
+  "S":"#ffc233","A+":"#c4a4ff","A":"#b18cff","A-":"#9a71f2",
+  "B+":"#79b4ff","B":"#5aa2ff","B-":"#4187e6",
+  "C+":"#b4c3d8","C":"#9fb0c8","C-":"#8496af",
+};
+const badge = t => `<span class="badge" style="--tc:${TIER_COLOR[t] || "#4a5675"}">${esc(t ?? "?")}</span>`;
+const sic = n => `<img class="sicon" src="/icons/${encodeURIComponent(n)}.png" alt="" onerror="this.outerHTML='${E.SKILL_ICON[n] || "·"}'">`;
+
+let SYS = null, L = null, calc = null, tab = "rate";
+const P = id => L.players.find(p => p.id === id);
+const T = id => L.teams.find(t => t.id === id);
+const teamName = id => T(id)?.name ?? "(팀)";
+const recOf = id => calc.records[id] || { w: 0, d: 0, l: 0 };
+
+async function boot() {
+  SYS = await (await fetch("/api/system")).json();
+  const sel = $("lg-select");
+  sel.innerHTML = SYS.leagues.map(l =>
+    `<option value="${l.id}">${esc(l.name)}${l.status === "archived" ? " (보관)" : ""}</option>`).join("")
+    || `<option>리그 없음</option>`;
+  sel.onchange = () => loadLeague(+sel.value);
+  const first = SYS.leagues.find(l => l.status === "active") || SYS.leagues[0];
+  if (first) { sel.value = first.id; loadLeague(first.id); }
+  else $("content").innerHTML = `<div class="empty">아직 개설된 리그가 없습니다.<br>관리자 페이지에서 리그를 만들어주세요.</div>`;
+}
+async function loadLeague(id) {
+  L = await (await fetch(`/api/league/${id}`)).json();
+  calc = E.recalc(L);
+  $("brand").innerHTML = `${esc(L.name)}<em>PUBLIC</em>`;
+  $("lg-period").textContent = `${L.start || "?"} ~ ${L.end || "?"}${L.status === "archived" ? " · 보관됨" : ""}`;
+  render();
+}
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
+  $("tab-title").textContent = tab === "rate" ? "🏆 TOP RATE" : tab === "teams" ? "🛡️ 팀 순위" : "📋 경기 로그";
+  render();
+});
+
+function render() {
+  if (!L) return;
+  if (tab === "rate") renderRate();
+  else if (tab === "teams") renderTeams();
+  else renderLog();
+}
+
+/* ── TOP RATE ── */
+function renderRate() {
+  const ranked = E.rankings(L, calc);
+  const sCut = L.tiers["S"]?.cap ?? 8;
+  $("content").innerHTML = ranked.map((p, i) => {
+    const base = p.initialTier ? L.tiers[p.initialTier].mmr : 0;
+    const d = (calc.mmr[p.id] ?? base) - base;
+    const r = recOf(p.id);
+    const t = T(p.team);
+    return (i === sCut ? '<div class="s-cut">S 유지선 · TOP ' + sCut + "</div>" : "") + `
+    <div class="r-row${i < 3 ? " top3" : ""}" data-player="${p.id}">
+      <span class="rk">${i + 1}</span>
+      ${badge(p.tier)}
+      <span class="nm">${esc(p.name)}<span class="sub">${esc(p.pos ?? "포지션 미지정")} · ${t ? `<b style="color:${t.color}">${esc(t.name)}</b>` : "무소속"}</span></span>
+      <span class="pt">${calc.mmr[p.id] ?? "-"}</span>
+      <span class="dl ${d > 0 ? "up" : d < 0 ? "dn" : "z"}">${d > 0 ? "▲" + d : d < 0 ? "▼" + (-d) : "—"}</span>
+      <span class="rc">${r.w}승 ${r.d}무 ${r.l}패</span>
+    </div>`;
+  }).join("") || '<div class="empty">아직 티어 배치된 선수가 없습니다</div>';
+  $("content").querySelectorAll("[data-player]").forEach(el => el.onclick = () => showPlayer(+el.dataset.player));
+}
+
+/* ── 팀 순위 ── */
+function renderTeams() {
+  const st = E.standings(L, calc);
+  const mgr = new Set(L.teams.map(t => t.managerId).filter(v => v != null));
+  $("content").innerHTML = st.map((s, i) => {
+    const t = s.t;
+    const members = L.players.filter(p => p.active !== false && p.team === t.id)
+      .sort((a, b) => E.TIER_ORDER.indexOf(a.tier) - E.TIER_ORDER.indexOf(b.tier) || a.name.localeCompare(b.name, "ko"));
+    return `<div class="pub-team" style="--tc:${t.color}">
+      <div class="pt-head">
+        <span style="color:${i === 0 ? "var(--gold)" : "var(--dim)"}; font-weight:800">${i + 1}</span>
+        <span class="tag"></span><b>${esc(t.name)}</b>
+        <span style="color:var(--muted); font-size:11.5px">감독 ${esc(P(t.managerId)?.name ?? t.coach ?? "—")}</span>
+        <span style="margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums">${s.w}승 ${s.d}무 ${s.l}패</span>
+        <span style="color:var(--accent); font-weight:900">${s.pts}점</span>
+        ${L.config.showCoinsPublic ? `<span class="chip coin">코인 ${t.coins}</span>` : ""}
+      </div>
+      <div class="pt-roster">${members.map(p =>
+        `<span class="mini"><i style="color:${TIER_COLOR[p.tier] || "#4a5675"}">${p.tier ?? "?"}</i>${esc(p.name)}${mgr.has(p.id) ? " 👑" : ""}<small style="color:var(--dim)"> ${esc(p.pos ?? "")}</small></span>`).join("") || '<span class="mini" style="opacity:.5">선수 없음</span>'}</div>
+      <div class="pt-roster">${t.skills.map(n => `<span class="mini" title="${esc(L.skillTier[n] || "")}급">${sic(n)} ${esc(n)}</span>`).join("") || '<span class="mini" style="opacity:.5">소유 스킬 없음</span>'}</div>
+    </div>`;
+  }).join("") || '<div class="empty">아직 팀이 없습니다</div>';
+}
+
+/* ── 경기 로그 ── */
+function renderLog() {
+  $("content").innerHTML = L.matches.slice().reverse().map(m => {
+    const mc = calc.matchCalc[m.id] || {};
+    const rn = m.red.team != null ? teamName(m.red.team) : (m.red.name || "레드");
+    const bn = m.blue.team != null ? teamName(m.blue.team) : (m.blue.name || "블루");
+    const sk = [...(m.red.skills || []), ...(m.blue.skills || [])];
+    const chip = (id) => {
+      const p = P(id); if (!p) return "";
+      const d = mc.delta?.[id] ?? 0;
+      return `<span class="mini">${esc(p.name)} <span class="d ${d > 0 ? "up" : d < 0 ? "dn" : "z"}">${d > 0 ? "+" + d : d || "0"}</span></span>`;
+    };
+    return `<div class="m-row">
+      <span class="chip">${m.type} · ${m.week}주차 · ${m.date || ""}</span>
+      <span class="vs2">${esc(rn)} vs ${esc(bn)}</span>
+      <span class="res ${m.result === "red" ? "rw" : m.result === "blue" ? "bw" : "dr"}">${m.result === "red" ? "레드 승" : m.result === "blue" ? "블루 승" : "무승부"}</span>
+      ${mc.und ? '<span class="und">⚡언더독</span>' : ""}
+      ${sk.length ? `<span title="${esc(sk.join(", "))}">${sk.map(n => sic(n)).join("")}</span>` : ""}
+      <div class="lineup">${m.red.players.map(chip).join("")}<span style="color:var(--dim); font-size:10px; align-self:center">vs</span>${m.blue.players.map(chip).join("")}</div>
+    </div>`;
+  }).join("") || '<div class="empty">아직 경기가 없습니다</div>';
+}
+
+/* ── 선수 상세 ── */
+function showPlayer(id) {
+  const p = P(id); if (!p) return;
+  const t = T(p.team);
+  const r = recOf(id);
+  const total = r.w + r.d + r.l;
+  // MMR 추이: 스타트 + 이벤트(경기·조정) 순서대로
+  const pts = [p.initialTier ? L.tiers[p.initialTier].mmr : 0];
+  const events = [];
+  for (const m of L.matches) if (m.red.players.includes(id) || m.blue.players.includes(id))
+    events.push({ date: m.date || "", order: 1, seq: m.id, get: () => calc.matchCalc[m.id]?.after?.[id] });
+  const running = { v: pts[0] };
+  for (const a of L.adjusts) if (a.playerId === id)
+    events.push({ date: a.at || "", order: 0, seq: a.id, adj: a.delta });
+  events.sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : (x.order - y.order) || (x.seq - y.seq));
+  let cur = pts[0];
+  for (const ev of events) {
+    if (ev.adj != null) cur += ev.adj;
+    else cur = ev.get() ?? cur;
+    pts.push(cur);
+  }
+  // SVG polyline
+  const w = 500, h = 100, pad = 8;
+  const min = Math.min(...pts), max = Math.max(...pts);
+  const x = i => pad + (pts.length > 1 ? i * (w - pad * 2) / (pts.length - 1) : 0);
+  const y = v => max === min ? h / 2 : pad + (max - v) * (h - pad * 2) / (max - min);
+  const line = pts.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  const recent = L.matches.filter(m => m.red.players.includes(id) || m.blue.players.includes(id)).slice(-8).reverse();
+  $("modal-card").innerHTML = `
+    <div class="mc-head">
+      ${badge(p.tier)}
+      <h3>${esc(p.name)}</h3>
+      <button class="mc-close" type="button" onclick="document.getElementById('modal').hidden=true">✕</button>
+    </div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap">
+      <span class="chip">MMR <b style="color:var(--text)">${calc.mmr[id] ?? "-"}</b></span>
+      <span class="chip">${esc(p.pos ?? "포지션 미지정")}</span>
+      <span class="chip">${t ? esc(t.name) : "무소속"}</span>
+      <span class="chip">${r.w}승 ${r.d}무 ${r.l}패${total ? ` · 승률 ${Math.round(r.w / total * 100)}%` : ""}</span>
+      <span class="chip">최초 배치 ${esc(p.initialTier ?? "-")}</span>
+    </div>
+    <svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="MMR 추이">
+      <polyline points="${line}" fill="none" stroke="#00e0b8" stroke-width="2"/>
+      ${pts.length ? `<circle cx="${x(pts.length - 1)}" cy="${y(pts[pts.length - 1])}" r="3.5" fill="#00e0b8"/>` : ""}
+    </svg>
+    <div style="display:flex; flex-direction:column; gap:5px">
+      ${recent.map(m => {
+        const mc = calc.matchCalc[m.id] || {};
+        const d = mc.delta?.[id] ?? 0;
+        const rn = m.red.team != null ? teamName(m.red.team) : (m.red.name || "레드");
+        const bn = m.blue.team != null ? teamName(m.blue.team) : (m.blue.name || "블루");
+        const mySide = m.red.players.includes(id) ? "red" : "blue";
+        const outcome = m.result === "draw" ? "무" : m.result === mySide ? "승" : "패";
+        return `<div style="display:flex; gap:8px; font-size:12px; color:var(--muted); align-items:center">
+          <span class="chip" style="font-size:10px">${m.date || ""} ${m.type}</span>
+          <span style="flex:1">${esc(rn)} vs ${esc(bn)}</span>
+          <b style="color:${outcome === "승" ? "#3ddc97" : outcome === "패" ? "var(--danger)" : "var(--dim)"}">${outcome}</b>
+          <span style="font-weight:800; color:${d > 0 ? "#3ddc97" : d < 0 ? "var(--danger)" : "var(--dim)"}">${d > 0 ? "+" + d : d}</span>
+        </div>`;
+      }).join("") || '<span class="empty" style="padding:10px 0">경기 기록 없음</span>'}
+    </div>`;
+  $("modal").hidden = false;
+}
+$("modal").onclick = e => { if (e.target.id === "modal") $("modal").hidden = true; };
+
+boot();
+</script>
+</body>
+</html>

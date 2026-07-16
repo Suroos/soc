@@ -1,0 +1,1995 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>초축 리그 — 관리자</title>
+<style>
+  :root{
+    --bg:#05080f; --panel:#0b1120; --panel-2:#111a2e; --line:#1d2942; --line-2:#2a3a5e;
+    --text:#eef2fa; --muted:#7e8aa5; --dim:#4a5675;
+    --accent:#00e0b8;
+    --danger:#ff4d6a; --gold:#ffc233; --purple:#b18cff; --blue:#5aa2ff; --gray:#9fb0c8;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Pretendard","Pretendard Variable",-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+    font-size:14px; line-height:1.5;
+    background-image:
+      radial-gradient(1100px 500px at 50% -10%, #0d1b33 0%, transparent 60%),
+      radial-gradient(900px 600px at 100% 110%, #081527 0%, transparent 55%);
+    background-attachment:fixed;
+  }
+  .app{height:100vh; display:flex; flex-direction:column}
+
+  /* ════ 상단 바 ════ */
+  header{
+    flex:0 0 auto; display:flex; align-items:center; gap:16px;
+    padding:0 20px; height:56px;
+    background:linear-gradient(180deg,#0d1526,#0a101f);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:11px; white-space:nowrap; cursor:pointer}
+  .brand .slash{width:5px; height:24px; background:var(--accent); transform:skew(-14deg);
+    box-shadow:0 0 14px 0 rgba(0,224,184,.55)}
+  .brand h1{margin:0; font-size:15px; font-weight:900; letter-spacing:-.3px}
+  .brand h1 em{font-style:normal; color:var(--accent); font-size:10px; font-weight:700;
+    letter-spacing:2px; display:block; line-height:1; margin-top:1px}
+  .steps{display:flex; align-items:center; margin-left:4px; overflow-x:auto}
+  .step{
+    position:relative; display:flex; align-items:center; gap:6px; white-space:nowrap;
+    color:var(--dim); font-size:12px; font-weight:600; padding:6px 10px; background:none; border:none;
+    font-family:inherit; cursor:pointer;
+  }
+  .step + .step::before{content:""; position:absolute; left:-1px; width:1px; height:14px; background:var(--line-2); transform:skew(-14deg)}
+  .step:hover{color:var(--muted)}
+  .step.now{color:var(--text)}
+  .step.now::after{content:""; position:absolute; left:10px; right:10px; bottom:-1px; height:2px;
+    background:var(--accent); box-shadow:0 0 8px rgba(0,224,184,.8)}
+  .head-right{margin-left:auto; display:flex; align-items:center; gap:9px}
+  .save-state{font-size:11px; font-weight:700; color:var(--dim)}
+  .save-state.saving{color:var(--gold)} .save-state.saved{color:var(--accent)}
+
+  main{flex:1 1 auto; display:flex; min-height:0}
+  .view{flex:1 1 auto; display:flex; min-width:0; min-height:0}
+  .view[hidden]{display:none}
+
+  /* ════ 공용 ════ */
+  .badge{
+    flex:0 0 30px; text-align:center; font-weight:800; font-size:11px; letter-spacing:.3px;
+    padding:2px 0; border-radius:5px;
+    color:var(--tc); border:1px solid color-mix(in srgb, var(--tc) 45%, transparent);
+    background:color-mix(in srgb, var(--tc) 12%, transparent);
+    font-variant-numeric:tabular-nums;
+  }
+  .chip{
+    font-size:11px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--muted);
+    border-radius:5px; padding:2.5px 9px; background:#0d1526; border:1px solid var(--line);
+  }
+  .chip b{color:var(--text)}
+  .chip.bad{color:#fff; background:color-mix(in srgb, var(--danger) 22%, #0d1526); border-color:var(--danger)}
+  .chip.sal{color:var(--gold); border-color:color-mix(in srgb, var(--gold) 30%, transparent)}
+  .chip.ok{color:var(--accent); border-color:color-mix(in srgb, var(--accent) 30%, transparent)}
+  .btn{
+    font:inherit; font-size:13.5px; font-weight:800; letter-spacing:-.2px;
+    border-radius:9px; padding:10px 20px; cursor:pointer;
+    border:1px solid var(--line-2); background:transparent; color:var(--muted);
+    transition:all .12s;
+  }
+  .btn:hover{color:var(--text); border-color:var(--muted)}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#03150f;
+    box-shadow:0 0 24px -6px rgba(0,224,184,.7)}
+  .btn.primary:hover{filter:brightness(1.08); color:#03150f}
+  .btn.big{font-size:15px; padding:13px 30px}
+  .btn.sm{font-size:11.5px; padding:5px 12px; border-radius:7px}
+  .btn.danger-line:hover{color:var(--danger); border-color:var(--danger)}
+  .btn:disabled{opacity:.35; cursor:not-allowed; pointer-events:none}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .mini-inp{display:flex; align-items:center; gap:5px; color:var(--dim); font-size:11px; font-weight:700}
+  .mini-inp input{
+    width:46px; padding:4px 6px; border-radius:6px; border:1px solid var(--line-2);
+    background:#060b16; color:var(--text); font:inherit; font-size:12px; font-weight:800;
+    font-variant-numeric:tabular-nums; text-align:center;
+  }
+  .mini-inp input:focus{outline:none; border-color:var(--accent)}
+  .tier-note{color:var(--muted); font-size:12.5px; margin:0 2px 2px}
+  .tier-note b{color:var(--text)}
+  input.txt, select.txt{
+    font:inherit; font-size:12.5px; font-weight:700; color:var(--text);
+    background:#060b16; border:1px solid var(--line-2); border-radius:7px; padding:6px 9px; color-scheme:dark;
+  }
+  input.txt:focus, select.txt:focus{outline:none; border-color:var(--accent)}
+  .sicon{width:15px; height:15px; vertical-align:-2px}
+
+  /* 토스트 */
+  #toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:99;
+    background:#101a30; border:1px solid var(--accent); color:var(--text);
+    border-radius:10px; padding:10px 18px; font-size:13px; font-weight:700;
+    box-shadow:0 10px 40px -10px #000; display:none;
+  }
+  #toast.bad{border-color:var(--danger)}
+
+  /* 인증 오버레이 */
+  #auth{
+    position:fixed; inset:0; z-index:50; display:grid; place-items:center;
+    background:rgba(3,6,12,.92); backdrop-filter:blur(4px);
+  }
+  #auth[hidden]{display:none}
+  .auth-card{
+    width:min(380px, 90vw); border:1px solid var(--line-2); border-radius:16px; padding:28px;
+    background:linear-gradient(180deg,#0c1322,#080d19); display:flex; flex-direction:column; gap:13px;
+    box-shadow:0 30px 80px -30px #000;
+  }
+  .auth-card h2{margin:0; font-size:18px; font-weight:900}
+  .auth-card h2 small{display:block; font-size:10px; letter-spacing:2.5px; color:var(--accent); font-weight:800}
+  .auth-card input{width:100%; padding:11px 13px; font-size:14px}
+  .auth-err{color:var(--danger); font-size:12px; font-weight:700; min-height:16px}
+
+  /* 사이드바 */
+  aside{
+    flex:0 0 272px; display:flex; flex-direction:column; min-height:0;
+    background:linear-gradient(180deg,#0a101f 0%,#080d19 100%);
+    border-right:1px solid var(--line);
+  }
+  .aside-head{padding:16px 18px 12px}
+  .aside-head .label{font-size:10.5px; font-weight:800; letter-spacing:2.5px; color:var(--accent)}
+  .aside-head h2{margin:3px 0 0; font-size:16px; font-weight:800; display:flex; align-items:baseline; gap:8px}
+  .aside-head h2 b{color:var(--accent); font-variant-numeric:tabular-nums; font-size:20px}
+  .aside-head p{margin:4px 0 0; color:var(--muted); font-size:12px}
+  .search{padding:0 14px 12px}
+  .search input{width:100%; padding:9px 13px; border-radius:8px; border:1px solid var(--line-2);
+    background:#060b16; color:var(--text); font:inherit; font-size:13px}
+  .search input:focus{outline:none; border-color:var(--accent)}
+  .pool{flex:1 1 auto; overflow-y:auto; padding:4px 12px 14px; display:flex; flex-direction:column; gap:6px;
+    scrollbar-width:thin; scrollbar-color:var(--line-2) transparent}
+  .pool:empty::after{content:"비었습니다"; color:var(--dim); text-align:center; padding:28px 0; font-size:12.5px}
+  .card{
+    position:relative; display:flex; align-items:center; gap:10px;
+    padding:8px 12px 8px 14px; border-radius:8px;
+    background:linear-gradient(135deg,#101a30 0%,#0c1425 100%);
+    border:1px solid var(--line); cursor:grab; user-select:none; overflow:hidden;
+    transition:transform .12s, border-color .12s;
+  }
+  .card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--tc)}
+  .card:hover{transform:translateX(3px); border-color:var(--line-2)}
+  .card.selected{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 0 16px rgba(0,224,184,.25)}
+  .card .name{font-weight:700; font-size:13.5px; flex:1 1 auto}
+  .card .mmr{color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; font-weight:600}
+  .card .sal{font-size:10.5px; color:var(--dim); margin-left:2px}
+  .card.ghost{opacity:.3}
+  .p-chip{
+    display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 3px 0 4px;
+    border-radius:7px; background:#101a30; border:1px solid var(--line-2);
+    cursor:grab; user-select:none; font-size:12.5px; font-weight:700;
+  }
+  .p-chip:hover{border-color:var(--tc)}
+  .p-chip .badge{flex-basis:27px; font-size:10px}
+  .p-chip button{all:unset; cursor:pointer; color:var(--dim); font-size:12px; padding:3px 6px; border-radius:5px}
+  .p-chip button:hover{color:var(--danger); background:rgba(255,77,106,.12)}
+  .p-chip.ghost{opacity:.3}
+  .p-chip.selected{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)}
+  .p-chip .ico{font-size:14px; line-height:1}
+
+  /* ════ 홈: 리그 목록 + 체크리스트 ════ */
+  .home{padding:22px; gap:18px; align-items:flex-start; overflow-y:auto}
+  .home-col{display:flex; flex-direction:column; gap:12px; min-height:0}
+  .home-col.leagues{flex:0 0 390px}
+  .home-col.check{flex:1 1 auto; max-width:560px}
+  .home h2{margin:0; font-size:15px; font-weight:800}
+  .home h2 small{display:block; font-size:10.5px; font-weight:800; letter-spacing:2.5px; color:var(--accent)}
+  .lg-card{
+    border:1px solid var(--line); border-radius:14px; padding:14px 17px; cursor:pointer;
+    background:linear-gradient(180deg,#0a1120,#070d19);
+    display:flex; flex-direction:column; gap:9px;
+  }
+  .lg-card.on{border-color:var(--accent); box-shadow:0 0 30px -14px rgba(0,224,184,.4)}
+  .lg-card .lg-head{display:flex; align-items:center; gap:9px}
+  .lg-card .lg-head b{font-size:16px; letter-spacing:-.4px; flex:1}
+  .lg-meta{display:flex; gap:6px; flex-wrap:wrap}
+  .lg-edit{display:flex; flex-direction:column; gap:8px; border-top:1px dashed var(--line); padding-top:10px}
+  .lg-edit .row{display:flex; gap:7px; align-items:center; flex-wrap:wrap; color:var(--dim); font-size:12px; font-weight:700}
+  .lg-add{
+    border:1.5px dashed var(--line-2); border-radius:14px; padding:14px; text-align:center;
+    color:var(--dim); font:inherit; font-weight:800; font-size:13.5px; background:none; cursor:pointer;
+  }
+  .lg-add:hover{color:var(--accent); border-color:var(--accent)}
+  .lg-new{border:1px solid var(--accent); border-radius:14px; padding:14px 17px;
+    display:flex; flex-direction:column; gap:9px; background:linear-gradient(180deg,#0a1120,#070d19)}
+  .ck-list{display:flex; flex-direction:column; gap:7px}
+  .ck-item{
+    display:flex; align-items:center; gap:12px;
+    border:1px solid var(--line); border-radius:11px; padding:10px 14px;
+    background:linear-gradient(180deg,#0a1120,#070d19);
+  }
+  .ck-item .ck-mark{
+    flex:0 0 24px; height:24px; display:grid; place-items:center; border-radius:6px;
+    font-size:12px; font-weight:900; color:var(--dim); border:1.5px solid var(--line-2); transform:skew(-6deg);
+  }
+  .ck-item.ok .ck-mark{color:#03150f; background:var(--accent); border-color:var(--accent);
+    box-shadow:0 0 10px rgba(0,224,184,.4)}
+  .ck-item .ck-body{flex:1; min-width:0}
+  .ck-item .ck-body b{font-size:13.5px}
+  .ck-item .ck-body small{display:block; color:var(--muted); font-size:11.5px}
+  .ck-divider{display:flex; align-items:center; gap:10px; color:var(--accent); font-size:10.5px; font-weight:800; letter-spacing:2px; margin:3px 0}
+  .ck-divider::before,.ck-divider::after{content:""; flex:1; height:1px; background:color-mix(in srgb, var(--accent) 30%, transparent)}
+  .arch-banner{border:1px solid var(--gold); color:var(--gold); border-radius:10px; padding:8px 14px;
+    font-size:12.5px; font-weight:700; background:rgba(255,194,51,.06)}
+
+  /* ════ 유저 관리 ════ */
+  .users{padding:22px; justify-content:center; overflow-y:auto}
+  .users-inner{flex:0 1 680px; display:flex; flex-direction:column; gap:12px; min-height:0}
+  .user-add{display:flex; gap:8px}
+  .user-add input{flex:1; padding:10px 14px; font-size:13.5px}
+  .bulk{display:flex; gap:8px; align-items:flex-start}
+  .bulk textarea{
+    flex:1; height:64px; resize:vertical; font:inherit; font-size:12.5px; color:var(--text);
+    background:#060b16; border:1px solid var(--line-2); border-radius:8px; padding:8px 12px;
+  }
+  .bulk textarea:focus{outline:none; border-color:var(--accent)}
+  .user-list{flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+    scrollbar-width:thin; scrollbar-color:var(--line-2) transparent; padding-right:4px}
+  .u-row{display:flex; align-items:center; gap:11px;
+    border:1px solid var(--line); border-radius:9px; padding:8px 13px;
+    background:linear-gradient(135deg,#101a30,#0c1425)}
+  .u-row .name{font-weight:700; flex:1}
+  .u-row .st{color:var(--dim); font-size:11.5px; font-weight:700}
+
+  /* ════ 티어/스킬 행 ════ */
+  .tier-wrap{flex:1 1 auto; min-width:0; overflow-y:auto; padding:14px 18px;
+    display:flex; flex-direction:column; gap:9px; scrollbar-width:thin; scrollbar-color:var(--line-2) transparent}
+  .trow{
+    display:flex; gap:14px; align-items:stretch;
+    border:1px solid var(--line); border-radius:11px; padding:9px 12px;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--tc) 6%, transparent) 0%, transparent 30%),
+      linear-gradient(180deg,#0a1120,#070d19);
+    transition:box-shadow .12s;
+  }
+  .trow.drag-over{box-shadow:inset 0 0 0 2px var(--tc), inset 0 0 40px -18px var(--tc)}
+  .trow-head{flex:0 0 285px; display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .trow-head .badge{flex-basis:38px; font-size:12.5px; padding:3.5px 0}
+  .cap{font-size:11.5px; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums; margin-left:auto}
+  .cap.bad{color:var(--danger)}
+  .trow-drop{flex:1 1 auto; display:flex; flex-wrap:wrap; gap:5px; align-content:center; min-height:34px;
+    border-left:1px solid var(--line); padding-left:14px}
+  .trow-drop .hint{color:var(--dim); font-size:11.5px; pointer-events:none; align-self:center}
+  .skill-top{display:flex; align-items:center; gap:12px; margin:0 2px 2px}
+  .skill-top .tier-note{flex:1; margin:0}
+  .own-dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:2px;
+    box-shadow:0 0 7px -1px currentColor}
+  .warn-banner{border:1px solid var(--danger); color:#ff8f9e; border-radius:10px; padding:9px 14px;
+    font-size:12.5px; font-weight:700; background:rgba(255,77,106,.07)}
+
+  /* ════ 팀 편성 보드 ════ */
+  .board-wrap{flex:1 1 auto; min-width:0; min-height:0; padding:14px; display:flex; flex-direction:column; gap:10px; overflow-y:auto}
+  .board-bar{flex:0 0 auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    border:1px solid var(--line); border-radius:10px; padding:8px 14px;
+    background:linear-gradient(180deg,#0a101f,#080d19)}
+  .board-bar .bar-label{font-size:10.5px; font-weight:800; letter-spacing:2px; color:var(--accent)}
+  .board-bar .note{margin-left:auto; color:var(--dim); font-size:11.5px}
+  .board{
+    position:relative; flex:1 1 auto; min-height:440px;
+    display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3px;
+    background:var(--line-2); border:1px solid var(--line-2); border-radius:14px; overflow:hidden;
+    box-shadow:0 0 0 1px #000, 0 24px 60px -30px #000;
+  }
+  .center-mark{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:92px; height:92px; border-radius:50%; z-index:5; pointer-events:none;
+    background:radial-gradient(circle at 50% 38%, #14203a 0%, #0a1122 70%);
+    border:2px solid var(--line-2);
+    box-shadow:0 0 0 6px rgba(5,8,15,.85), 0 0 34px rgba(0,224,184,.14);
+    display:grid; place-items:center; text-align:center;
+  }
+  .center-mark .ball{font-size:22px; line-height:1}
+  .center-mark small{display:block; font-size:8.5px; font-weight:800; letter-spacing:2px; color:var(--accent); margin-top:3px}
+  .team{
+    --tc:var(--accent);
+    position:relative; display:flex; flex-direction:column; min-height:0;
+    padding:14px 16px 12px;
+    background:radial-gradient(420px 200px at var(--gx) var(--gy), color-mix(in srgb, var(--tc) 9%, transparent) 0%, transparent 70%),
+      linear-gradient(180deg,#0a1120 0%,#070d19 100%);
+    transition:box-shadow .15s;
+  }
+  .team:nth-child(1){--gx:0%;--gy:0%} .team:nth-child(2){--gx:100%;--gy:0%}
+  .team:nth-child(3){--gx:0%;--gy:100%} .team:nth-child(4){--gx:100%;--gy:100%}
+  .team.drag-over{box-shadow:inset 0 0 0 2px var(--tc), inset 0 0 60px -20px var(--tc); z-index:2}
+  .team-head{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .team-head .tag{width:14px; height:14px; background:var(--tc); transform:skew(-14deg); border-radius:2px;
+    box-shadow:0 0 12px color-mix(in srgb, var(--tc) 60%, transparent)}
+  .team-head .t-name{
+    font:inherit; font-size:18px; font-weight:900; letter-spacing:-.5px; color:var(--text);
+    background:none; border:none; border-bottom:1px dashed transparent; padding:0; width:120px;
+  }
+  .team-head .t-name:hover{border-bottom-color:var(--line-2)}
+  .team-head .t-name:focus{outline:none; border-bottom-color:var(--tc)}
+  .team-head .coach{display:inline-flex; align-items:center; gap:5px; color:var(--muted); font-size:11.5px; font-weight:600;
+    border:1px solid var(--line); border-radius:5px; padding:1px 6px; background:#0d1526}
+  .team-head .coach select{font:inherit; font-size:11.5px; font-weight:700; color:var(--text); background:none; border:none}
+  .team-head .coach select:focus{outline:none}
+  .team-head .coach option{background:#0d1526}
+  .t-del{all:unset; cursor:pointer; margin-left:auto; color:var(--dim); font-size:12px; padding:3px 7px; border-radius:6px}
+  .t-del:hover{color:var(--danger); background:rgba(255,77,106,.12)}
+  .board-empty{grid-column:1/-1; grid-row:1/-1; display:grid; place-items:center; text-align:center;
+    color:var(--dim); background:linear-gradient(180deg,#0a1120,#070d19); font-size:14px}
+  .team-stats{display:flex; gap:6px; flex-wrap:wrap; margin:9px 0 8px}
+  .team-skills{display:flex; flex-wrap:wrap; gap:5px; align-items:center; margin:-2px 0 8px}
+  .s-own{display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:var(--muted);
+    border:1px solid var(--line); border-radius:5px; padding:1.5px 3px 1.5px 7px; background:#0d1526}
+  .s-own button{all:unset; cursor:pointer; color:var(--dim); font-size:11px; padding:1px 5px; border-radius:4px}
+  .s-own button:hover{color:var(--danger); background:rgba(255,77,106,.12)}
+  .add-skill{font:inherit; font-size:11px; font-weight:700; color:var(--muted);
+    background:#0d1526; border:1px solid var(--line-2); border-radius:5px; padding:2.5px 6px; max-width:130px; cursor:pointer}
+  .add-skill:focus{outline:none; border-color:var(--accent)}
+  .coin-edit input{width:56px; color:var(--accent)}
+  .roster{
+    flex:1 1 auto; min-height:64px; overflow-y:auto; align-content:start;
+    display:flex; flex-wrap:wrap; gap:6px; padding:9px; border-radius:10px;
+    background:rgba(0,0,0,.28); border:1px solid var(--line);
+    scrollbar-width:thin; scrollbar-color:var(--line-2) transparent;
+  }
+  .roster .hint{width:100%; color:var(--dim); font-size:12px; text-align:center; align-self:center; pointer-events:none}
+  .mini{font-size:11px; font-weight:700; color:var(--muted); border:1px solid var(--line);
+    border-radius:5px; padding:1px 7px; background:#0d1526}
+  .mini i{font-style:normal; color:var(--tc); font-weight:800; margin-right:3px; font-size:10px}
+  .mini.full{color:var(--gold); border-color:color-mix(in srgb, var(--gold) 35%, transparent)}
+
+  /* ════ 경매 ════ */
+  .draft{flex-direction:column; padding:16px 20px 14px; gap:12px; overflow-y:auto}
+  .draft-top{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .round-tag{display:flex; align-items:baseline; gap:9px; font-size:24px; font-weight:900; font-style:italic}
+  .round-tag small{font-size:12px; color:var(--muted); font-style:normal; font-weight:600}
+  .round-tag .r{color:var(--accent); text-shadow:0 0 18px rgba(0,224,184,.5)}
+  .coin-set{display:flex; gap:8px; align-items:center; margin-left:auto; color:var(--muted); font-size:12px; flex-wrap:wrap}
+  .coin-set label{display:flex; gap:6px; align-items:center}
+  .coin-set input{width:58px; padding:6px 9px; border-radius:7px; border:1px solid var(--line-2);
+    background:#060b16; color:var(--text); font:inherit; font-size:13px; font-weight:700; text-align:right}
+  .coin-set input:disabled{opacity:.45}
+  .coin-set input:focus{outline:none; border-color:var(--accent)}
+  .draft-mid{flex:1 1 auto; min-height:380px; display:grid; grid-template-columns:1fr 320px; gap:14px}
+  .pool-assign{grid-column:1/-1; min-height:0; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr auto; gap:12px}
+  .rcol{min-height:180px; display:flex; flex-direction:column;
+    background:linear-gradient(180deg,#0a101f,#080d19); border:1px solid var(--line); border-radius:12px;
+    transition:box-shadow .12s}
+  .rcol.drag-over{box-shadow:inset 0 0 0 2px var(--accent)}
+  .rcol h3{margin:0; padding:11px 14px 9px; font-size:12px; font-weight:800; letter-spacing:1.5px;
+    color:var(--muted); border-bottom:1px solid var(--line)}
+  .rcol h3 b{color:var(--accent)}
+  .rcol.excl h3 b{color:var(--dim)}
+  .rlist{flex:1; min-height:0; overflow-y:auto; padding:10px 12px; display:flex; flex-wrap:wrap; gap:5px; align-content:flex-start;
+    scrollbar-width:thin; scrollbar-color:var(--line-2) transparent}
+  .rlist .hint{width:100%; color:var(--dim); font-size:11.5px; text-align:center; padding:16px 0; pointer-events:none}
+  .assign-foot{grid-column:1/-1; display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap}
+  .assign-foot .tier-note{margin:0}
+  .stage{
+    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+    border:1px solid var(--line-2); border-radius:16px; overflow:hidden;
+    background:radial-gradient(600px 300px at 50% 0%, rgba(0,224,184,.07) 0%, transparent 65%),
+      linear-gradient(180deg,#0a1120 0%,#070d19 100%);
+    box-shadow:0 24px 60px -30px #000; padding:24px;
+  }
+  .stage .label{font-size:11px; font-weight:800; letter-spacing:3px; color:var(--accent)}
+  .stage-card{display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+    min-height:140px; justify-content:center}
+  .stage-card .badge{flex-basis:auto; font-size:14px; padding:4px 14px}
+  .stage-card .pname{font-size:42px; font-weight:900; letter-spacing:-1px; line-height:1.1;
+    text-shadow:0 6px 30px rgba(0,0,0,.7)}
+  .stage-card .pmeta{color:var(--muted); font-size:13.5px}
+  .stage-card .pmeta b{color:var(--text)}
+  .stage-card.rolling .pname{color:var(--dim); text-shadow:none}
+  .stage-idle{color:var(--dim); font-size:13.5px; text-align:center}
+  .bid-row{display:flex; gap:8px; align-items:stretch; flex-wrap:wrap; justify-content:center}
+  .team-pick{display:flex; flex-direction:column; align-items:center; gap:2px;
+    font:inherit; font-weight:800; font-size:13px; color:var(--muted); cursor:pointer;
+    background:#0d1526; border:1px solid var(--line-2); border-radius:10px; padding:8px 16px; transition:all .12s}
+  .team-pick small{font-size:10.5px; font-weight:700; color:var(--dim)}
+  .team-pick:hover{border-color:var(--tc); color:var(--text)}
+  .team-pick.on{border-color:var(--tc); color:#fff;
+    background:color-mix(in srgb, var(--tc) 18%, #0d1526); box-shadow:0 0 18px -4px var(--tc)}
+  .team-pick.on small{color:var(--tc)}
+  .team-pick:disabled{opacity:.35; cursor:not-allowed}
+  .price{width:110px; padding:8px 12px; border-radius:10px; border:1px solid var(--line-2);
+    background:#060b16; color:var(--gold); font:inherit; font-size:17px; font-weight:800; text-align:center}
+  .price:focus{outline:none; border-color:var(--gold)}
+  .price::placeholder{color:var(--dim); font-size:13px; font-weight:600}
+  .stage-actions{display:flex; gap:9px; flex-wrap:wrap; justify-content:center}
+  .bid-error{color:var(--danger); font-size:12px; font-weight:700; min-height:18px}
+  .draft-side{display:flex; flex-direction:column; gap:12px; min-height:0}
+  .side-box{flex:1 1 50%; min-height:0; display:flex; flex-direction:column;
+    background:linear-gradient(180deg,#0a101f,#080d19); border:1px solid var(--line); border-radius:12px}
+  .side-box h3{margin:0; padding:11px 14px 9px; font-size:12px; font-weight:800; letter-spacing:1.5px;
+    color:var(--muted); border-bottom:1px solid var(--line)}
+  .side-box h3 b{color:var(--accent)}
+  .side-list{flex:1; overflow-y:auto; padding:9px 12px; display:flex; flex-direction:column; gap:5px;
+    scrollbar-width:thin; scrollbar-color:var(--line-2) transparent; font-size:12.5px}
+  .q-item{display:flex; align-items:center; gap:8px; color:var(--muted)}
+  .q-item .badge{flex-basis:26px; font-size:10px}
+  .log-item{display:flex; align-items:center; gap:7px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .log-item .who{font-weight:700; color:var(--text)}
+  .log-item .arrow{color:var(--dim)}
+  .log-item .team-n{font-weight:700; color:var(--tc)}
+  .log-item .cost{margin-left:auto; color:var(--gold); font-weight:800}
+  .log-item.pass .cost{color:var(--dim)}
+  .draft-teams{flex:0 0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+  .dteam{--tc:var(--accent);
+    border:1px solid var(--line); border-radius:12px; padding:10px 13px;
+    background:radial-gradient(240px 110px at 0% 0%, color-mix(in srgb, var(--tc) 10%, transparent) 0%, transparent 70%),
+      linear-gradient(180deg,#0a1120,#070d19)}
+  .dteam .t-head{display:flex; align-items:center; gap:7px}
+  .dteam .tag{width:11px; height:11px; background:var(--tc); transform:skew(-14deg); border-radius:2px}
+  .dteam .t-head b{font-size:14px}
+  .dteam .coins{margin-left:auto; font-size:16px; font-weight:900; color:var(--accent)}
+  .dteam .coins small{font-size:10px; color:var(--dim); font-weight:700; margin-left:2px}
+  .dteam .picks{margin-top:6px; display:flex; flex-wrap:wrap; gap:4px; min-height:20px}
+
+  /* ════ 경기 관리 ════ */
+  .ops{padding:0}
+  .ops-scroll{flex:1 1 auto; min-width:0; overflow-y:auto; padding:14px 18px;
+    display:flex; flex-direction:column; gap:13px; scrollbar-width:thin; scrollbar-color:var(--line-2) transparent}
+  .ops-bottom{display:flex; gap:13px; align-items:flex-start}
+  .ops-bottom .side-cards{flex:0 0 320px; display:flex; flex-direction:column; gap:13px}
+  .ops-bottom .grow{flex:1 1 auto}
+  .ops-bottom .ops-list{max-height:320px}
+  .ops-card{display:flex; flex-direction:column; gap:9px; min-height:0;
+    border:1px solid var(--line); border-radius:13px; padding:13px 15px;
+    background:linear-gradient(180deg,#0a1120,#070d19)}
+  .ops-card h3{margin:0; font-size:11px; font-weight:800; letter-spacing:2px; color:var(--accent)}
+  .ops-list{flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:5px;
+    scrollbar-width:thin; scrollbar-color:var(--line-2) transparent}
+  .f-row{display:flex; gap:7px; align-items:center; flex-wrap:wrap; font-size:12px; color:var(--dim); font-weight:700}
+  .mf-top{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .mf-top h3{margin-right:auto}
+  .mf-grid{display:grid; grid-template-columns:1fr 168px 1fr; gap:12px; align-items:stretch}
+  .mf-side{display:flex; flex-direction:column; gap:8px; border-radius:12px; padding:12px;
+    border:1px solid var(--line-2); background:linear-gradient(180deg,#0a1120,#070d19)}
+  .mf-side.red{border-color:rgba(255,77,106,.4);
+    background:radial-gradient(360px 140px at 0% 0%, rgba(255,77,106,.08), transparent 70%), linear-gradient(180deg,#0a1120,#070d19)}
+  .mf-side.blue{border-color:rgba(90,162,255,.4);
+    background:radial-gradient(360px 140px at 100% 0%, rgba(90,162,255,.08), transparent 70%), linear-gradient(180deg,#0a1120,#070d19)}
+  .mf-head{display:flex; gap:8px; align-items:center}
+  .mf-head select, .mf-head input{flex:1; min-width:0}
+  .slots{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+  .slot{display:flex; align-items:center; gap:7px; height:38px; padding:0 5px 0 8px; border-radius:8px;
+    background:#0d1526; border:1px solid var(--line-2); font-size:12.5px}
+  .slot b{flex:1}
+  .slot .badge{flex-basis:27px; font-size:10px}
+  .slot button{all:unset; cursor:pointer; color:var(--dim); font-size:12px; padding:3px 6px; border-radius:5px}
+  .slot button:hover{color:var(--danger)}
+  .slot.empty{justify-content:center; color:var(--dim); border-style:dashed; background:rgba(0,0,0,.22); font-size:11px; font-weight:700; letter-spacing:1px}
+  .mf-sub{font-size:10px; font-weight:800; letter-spacing:1.5px; color:var(--dim); margin-top:2px}
+  .mf-sub b{color:var(--accent)}
+  .pickzone{display:flex; flex-wrap:wrap; gap:4px; min-height:30px; padding:7px; border-radius:9px;
+    background:rgba(0,0,0,.25); border:1px solid var(--line)}
+  .pickzone .hint{color:var(--dim); font-size:11px; pointer-events:none}
+  .pickzone.skills{max-height:96px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--line-2) transparent}
+  .pickp{font:inherit; font-size:11.5px; font-weight:700; color:var(--muted); cursor:pointer;
+    background:#0d1526; border:1px solid var(--line-2); border-radius:6px; padding:3px 9px}
+  .pickp i{font-style:normal; font-weight:800; font-size:10px; margin-right:4px; color:var(--sc)}
+  .pickp.on{color:#fff; border-color:var(--sc); background:color-mix(in srgb, var(--sc) 16%, #0d1526)}
+  .mf-center{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:8px 2px}
+  .mf-center .vs{font-size:28px; font-weight:900; font-style:italic; color:var(--dim);
+    text-shadow:0 0 24px rgba(0,224,184,.15)}
+  .mf-center .sum{font-size:13px; font-weight:800; text-align:center}
+  .mf-center .sum span{color:var(--dim); font-weight:600}
+  .seg{display:flex; gap:6px}
+  .seg.vert{flex-direction:column; width:100%}
+  .seg button{flex:1; font:inherit; font-size:12.5px; font-weight:800; color:var(--muted); cursor:pointer;
+    background:#0d1526; border:1px solid var(--line-2); border-radius:8px; padding:8px 4px}
+  .seg button.on{color:#fff; border-color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, #0d1526)}
+  .seg.vert button[data-res="red"].on{border-color:var(--danger); background:color-mix(in srgb, var(--danger) 16%, #0d1526)}
+  .seg.vert button[data-res="blue"].on{border-color:var(--blue); background:color-mix(in srgb, var(--blue) 16%, #0d1526)}
+  .warn-box{display:flex; flex-direction:column; gap:4px; font-size:11.5px; font-weight:700; min-height:16px}
+  .warn-box .w{color:var(--gold)} .warn-box .e{color:var(--danger)} .warn-box .i{color:var(--muted)}
+  .st-row{display:flex; align-items:center; gap:8px; padding:5px 8px; font-size:12.5px; font-variant-numeric:tabular-nums}
+  .st-row .tag{width:10px; height:10px; background:var(--tc); transform:skew(-14deg); border-radius:2px}
+  .st-row .nm{flex:1; font-weight:800}
+  .st-row .wdl{color:var(--muted); font-size:11.5px}
+  .st-row .pts{font-weight:900; color:var(--accent)}
+  .m-row{display:flex; align-items:center; gap:7px; padding:7px 9px; border-radius:8px;
+    border:1px solid var(--line); background:#0a1120; font-size:12px; flex-wrap:wrap}
+  .m-row .vs2{font-weight:800}
+  .m-row .res{font-size:10.5px; font-weight:800; border-radius:4px; padding:1px 6px}
+  .m-row .res.rw{color:#ff8f9e; background:rgba(255,77,106,.14)}
+  .m-row .res.bw{color:#8fc3ff; background:rgba(90,162,255,.14)}
+  .m-row .res.dr{color:var(--muted); background:#0d1526}
+  .m-row .und{color:var(--gold); font-size:10.5px; font-weight:800}
+  .m-row button{all:unset; cursor:pointer; color:var(--dim); font-size:11px; padding:2px 6px; border-radius:4px; margin-left:auto}
+  .m-row button:hover{color:var(--danger); background:rgba(255,77,106,.12)}
+  .l-row{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); padding:2px 0}
+  .l-row.cx{opacity:.45; text-decoration:line-through}
+  .l-row button{all:unset; cursor:pointer; color:var(--dim); font-size:10.5px; padding:1px 6px; border-radius:4px; margin-left:auto; border:1px solid var(--line)}
+  .l-row button:hover{color:var(--danger); border-color:var(--danger)}
+
+  footer{flex:0 0 auto; display:flex; align-items:center; gap:14px;
+    padding:10px 20px; background:linear-gradient(0deg,#0d1526,#0a101f); border-top:1px solid var(--line)}
+  footer .tip{color:var(--muted); font-size:12px; flex:1}
+  footer .tip b{color:var(--text)}
+
+  @media (prefers-reduced-motion:no-preference){
+    .stage-card.pop{animation:pop .25s ease}
+    @keyframes pop{from{transform:scale(.92); opacity:.4} to{transform:none; opacity:1}}
+  }
+  @media (max-width:960px){
+    .app{height:auto; min-height:100vh}
+    main{flex-direction:column}
+    .view{flex-direction:column}
+    aside{flex:0 0 auto; max-height:240px; border-right:none; border-bottom:1px solid var(--line)}
+    .board{grid-template-columns:1fr; grid-template-rows:repeat(4,minmax(190px,1fr))}
+    .center-mark{display:none}
+    header{height:auto; padding:10px 14px; flex-wrap:wrap; gap:8px}
+    .draft-mid{grid-template-columns:1fr}
+    .pool-assign{grid-template-columns:1fr}
+    .draft-teams{grid-template-columns:1fr 1fr}
+    .mf-grid{grid-template-columns:1fr}
+    .ops-bottom{flex-direction:column}
+    .ops-bottom .side-cards{flex:0 0 auto; width:100%}
+    .home{flex-direction:column}
+    .home-col.leagues{flex:0 0 auto; width:100%}
+    .trow{flex-direction:column; gap:8px}
+    .trow-head{flex:0 0 auto}
+    .trow-drop{border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:8px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand" data-goto="home">
+      <span class="slash"></span>
+      <h1 id="brand-name">초축 리그<em>ADMIN</em></h1>
+    </div>
+    <nav class="steps" aria-label="관리 메뉴">
+      <button class="step" type="button" data-goto="home">리그</button>
+      <button class="step" type="button" data-goto="users">유저·선수</button>
+      <button class="step" type="button" data-goto="tier">티어 배치</button>
+      <button class="step" type="button" data-goto="skill">스킬 티어</button>
+      <button class="step" type="button" data-goto="board">팀 편성</button>
+      <button class="step" type="button" data-goto="draft">드래프트</button>
+      <button class="step" type="button" data-goto="ops">경기 관리</button>
+    </nav>
+    <div class="head-right">
+      <span class="save-state" id="save-state"></span>
+      <a class="btn sm" href="/" target="_blank" style="text-decoration:none">공개 페이지 ↗</a>
+      <button class="btn sm" type="button" id="logout-btn">로그아웃</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ═══ 홈: 리그 목록 + 체크리스트 ═══ -->
+    <section class="view home" id="view-home" aria-label="리그 목록">
+      <div class="home-col leagues">
+        <h2><small>LEAGUES</small>리그 목록</h2>
+        <div id="lg-list"></div>
+        <button class="lg-add" type="button" id="lg-add-btn">+ 새 리그 만들기</button>
+        <div class="lg-new" id="lg-new" hidden>
+          <b style="font-size:14px">새 리그</b>
+          <input class="txt" id="new-lg-name" placeholder="리그 이름 (예: 2026 썸머리그)">
+          <div class="f-row">기간 <input class="txt" type="date" id="new-lg-start"> ~ <input class="txt" type="date" id="new-lg-end"></div>
+          <div class="f-row">
+            <button class="btn sm primary" type="button" id="new-lg-create">만들기</button>
+            <button class="btn sm" type="button" id="new-lg-cancel">취소</button>
+          </div>
+        </div>
+      </div>
+      <div class="home-col check" id="home-check"></div>
+    </section>
+
+    <!-- ═══ 유저 관리 ═══ -->
+    <section class="view users" id="view-users" hidden aria-label="유저 관리">
+      <div class="users-inner">
+        <h2 style="margin:0; font-size:15px; font-weight:800"><small style="display:block; font-size:10.5px; letter-spacing:2.5px; color:var(--accent)">USERS</small>유저 관리 · 선수 등록</h2>
+        <p class="tier-note">유저는 시스템 전역 명단 — <b>이름만으로 추가</b>합니다. <b>[리그에 등록]</b>하면 현재 리그의 선수가 됩니다</p>
+        <div class="user-add">
+          <input class="txt" id="new-user" placeholder="유저 이름 입력">
+          <button class="btn primary" type="button" id="add-user">+ 유저 추가</button>
+        </div>
+        <div class="bulk">
+          <textarea id="bulk-users" placeholder="여러 명 붙여넣기 — 한 줄에 한 명씩. 유저 추가 + 리그 등록까지 한 번에"></textarea>
+          <button class="btn" type="button" id="bulk-add">일괄 등록</button>
+        </div>
+        <div class="user-list" id="user-list"></div>
+      </div>
+    </section>
+
+    <!-- ═══ 티어 배치 ═══ -->
+    <section class="view" id="view-tier" hidden aria-label="티어 배치">
+      <aside>
+        <div class="aside-head">
+          <div class="label">UNRANKED</div>
+          <h2>미배치 선수 <b id="tpool-count">0</b></h2>
+          <p>티어 행으로 끌어다 놓으면 배치됩니다</p>
+        </div>
+        <div class="pool" id="tpool"></div>
+      </aside>
+      <div class="tier-wrap" id="tier-wrap"></div>
+    </section>
+
+    <!-- ═══ 스킬 티어 ═══ -->
+    <section class="view" id="view-skill" hidden aria-label="스킬 티어">
+      <div class="tier-wrap" id="skill-wrap"></div>
+    </section>
+
+    <!-- ═══ 팀 편성 ═══ -->
+    <section class="view" id="view-board" hidden aria-label="팀 편성">
+      <aside>
+        <div class="aside-head">
+          <div class="label">PLAYER POOL</div>
+          <h2>미배정 선수 <b id="pool-count">0</b></h2>
+          <p>팀 칸으로 끌어다 놓으면 소속됩니다</p>
+        </div>
+        <div class="search"><input id="q" type="search" placeholder="이름·티어 검색"></div>
+        <div class="pool" id="pool"></div>
+      </aside>
+      <div class="board-wrap">
+        <div class="board-bar">
+          <span class="bar-label">로스터 제약</span>
+          <label class="mini-inp">팀 총원 <input id="cap-total" type="number" min="0"></label>
+          <label class="mini-inp">S~A- 최대 <input id="cap-hi" type="number" min="0"></label>
+          <label class="mini-inp">B+~C- 최대 <input id="cap-lo" type="number" min="0"></label>
+          <label class="mini-inp">팀 스킬 상한 <input id="cap-skill" type="number" min="0"></label>
+          <button class="btn sm" type="button" id="add-team">+ 팀 만들기</button>
+          <button class="btn sm" type="button" id="trade-btn">🔁 트레이드</button>
+          <span class="note">초과 시 ⚠ 경고 (저장은 허용)</span>
+        </div>
+        <div class="ops-card" id="trade-panel" hidden></div>
+        <div class="board" id="board">
+          <div class="center-mark" aria-hidden="true"><div><span class="ball">⚽</span><small>TEAM DRAFT</small></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 경매 드래프트 ═══ -->
+    <section class="view draft" id="view-draft" hidden aria-label="경매 드래프트">
+      <div class="draft-top">
+        <div class="round-tag"><span class="r" id="round-label">ROUND 1</span><small id="round-left"></small></div>
+        <div class="coin-set">
+          <label>1R 지급 <input type="number" id="coin-r1" min="0" step="10"></label>
+          <label>2R 추가 <input type="number" id="coin-r2" min="0" step="10"></label>
+          <span class="chip">잔여 이월 <b>ON</b></span>
+          <span class="chip" style="border-color:transparent; background:none; padding-right:0">팀당 획득 상한</span>
+          <label>S <input type="number" id="lim-s" min="0" style="width:44px"></label>
+          <label>A <input type="number" id="lim-a" min="0" style="width:44px"></label>
+          <label>B <input type="number" id="lim-b" min="0" style="width:44px"></label>
+          <label>C <input type="number" id="lim-c" min="0" style="width:44px"></label>
+          <button class="btn sm danger-line" type="button" id="draft-reset" hidden>초기화</button>
+        </div>
+      </div>
+      <div class="draft-mid">
+        <div class="pool-assign" id="pool-assign">
+          <div class="rcol" data-round="1"><h3>1라운드 풀 <b id="rc1">0</b></h3><div class="rlist" id="rl1"></div></div>
+          <div class="rcol" data-round="2"><h3>2라운드 풀 <b id="rc2">0</b></h3><div class="rlist" id="rl2"></div></div>
+          <div class="rcol excl" data-round="0"><h3>경매 제외 <b id="rc0">0</b></h3><div class="rlist" id="rl0"></div></div>
+          <div class="assign-foot">
+            <p class="tier-note" id="assign-note">선수 칩을 끌어서 라운드를 정하세요 · 시작하면 <b>설정과 풀이 잠깁니다</b></p>
+            <button class="btn primary big" type="button" id="start-draft">🎲 경매 시작</button>
+          </div>
+        </div>
+        <div class="stage" id="stage" hidden></div>
+        <div class="draft-side" id="draft-side" hidden>
+          <div class="side-box">
+            <h3>이번 라운드 대기 <b id="q-count">0</b></h3>
+            <div class="side-list" id="queue-list"></div>
+          </div>
+          <div class="side-box">
+            <h3>경매 로그</h3>
+            <div class="side-list" id="log-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="draft-teams" id="draft-teams"></div>
+    </section>
+
+    <!-- ═══ 경기 관리 ═══ -->
+    <section class="view ops" id="view-ops" hidden aria-label="경기 관리">
+      <div class="ops-scroll">
+        <div class="ops-card" id="ops-form"></div>
+        <div class="ops-bottom">
+          <div class="side-cards">
+            <div class="ops-card">
+              <h3>STANDINGS · 팀 순위</h3>
+              <div id="standings"></div>
+            </div>
+            <div class="ops-card">
+              <h3>MMR 수동 보정</h3>
+              <div class="f-row">
+                <select class="txt" id="adj-player" style="max-width:130px"></select>
+                <input class="txt" id="adj-delta" type="number" placeholder="±p" style="width:70px">
+              </div>
+              <div class="f-row">
+                <input class="txt" id="adj-reason" placeholder="사유 (필수)" style="flex:1">
+                <button class="btn sm" type="button" id="adj-apply">적용</button>
+              </div>
+            </div>
+            <div class="ops-card">
+              <h3>WEEKLY UPDATE · 주간 갱신</h3>
+              <p class="tier-note" style="margin:0">MMR 순위 기반 티어 재배치 · 휴면 강등 · 승격 보상 — <b>M2에서 자동화 예정</b></p>
+              <div class="f-row"><button class="btn sm" type="button" id="run-weekly">수동 실행</button>
+              <span class="chip" id="weekly-msg">M2 예정</span></div>
+            </div>
+          </div>
+          <div class="ops-card grow">
+            <h3>MATCH LOG · 경기 로그</h3>
+            <div class="ops-list" id="match-list"></div>
+          </div>
+          <div class="ops-card grow" style="flex:0 0 340px">
+            <h3>LEDGER · 거래 내역</h3>
+            <div class="ops-list" id="ledger-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="tip" id="foot-tip"></span>
+  </footer>
+</div>
+
+<div id="toast"></div>
+
+<div id="auth" hidden>
+  <div class="auth-card">
+    <h2><small>CHOCHUK LEAGUE</small><span id="auth-title">관리자 로그인</span></h2>
+    <p class="tier-note" id="auth-desc" style="margin:0"></p>
+    <input class="txt" id="auth-pw" type="password" placeholder="비밀번호">
+    <div class="auth-err" id="auth-err"></div>
+    <button class="btn primary" type="button" id="auth-go">확인</button>
+  </div>
+</div>
+
+<script src="/engine.js"></script>
+<script>
+"use strict";
+const E = Engine;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const today = () => new Date().toISOString().slice(0, 10);
+
+const TIER_COLOR = {
+  "S":"#ffc233","A+":"#c4a4ff","A":"#b18cff","A-":"#9a71f2",
+  "B+":"#79b4ff","B":"#5aa2ff","B-":"#4187e6",
+  "C+":"#b4c3d8","C":"#9fb0c8","C-":"#8496af",
+};
+const TEAM_COLORS = ["#ff4d6a","#00e0b8","#b18cff","#ffc233"];
+
+/* 스킬 아이콘: /icons/<이름>.png 있으면 이미지, 없으면 이모지 */
+const sic = n => `<img class="sicon" src="/icons/${encodeURIComponent(n)}.png" alt="" onerror="this.outerHTML='${E.SKILL_ICON[n] || "·"}'">`;
+const badge = t => `<span class="badge" style="--tc:${TIER_COLOR[t] || "#4a5675"}">${esc(t ?? "?")}</span>`;
+
+/* ── 전역 상태 ── */
+let SYS = null;      // /api/system
+let L = null;        // 현재 리그 전체 상태
+let calc = null;     // Engine.recalc 결과
+let curView = "home";
+let selected = null, selectedSkill = null, tradeOpen = false, pickedTeam = null;
+let saveTimer = null, saving = false, pendingSave = false;
+
+const P = id => L.players.find(p => p.id === id);
+const T = id => L.teams.find(t => t.id === id);
+const activeTeams = () => L.teams.filter(t => t.active !== false);
+const activePlayers = () => L.players.filter(p => p.active !== false);
+const managerSet = () => new Set(activeTeams().map(t => t.managerId).filter(v => v != null));
+const teamName = id => T(id)?.name ?? "(삭제된 팀)";
+const ORDER = E.TIER_ORDER;
+const sortP = (a, b) => (ORDER.indexOf(a.tier) - ORDER.indexOf(b.tier)) || a.name.localeCompare(b.name, "ko");
+const byName = (a, b) => a.name.localeCompare(b.name, "ko");
+const mmrOf = p => calc.mmr[p.id] ?? null;
+const salOf = p => p.tier ? L.tiers[p.tier].sal : 0;
+const recOf = id => calc.records[id] || { w: 0, d: 0, l: 0 };
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ── 토스트/저장 ── */
+let toastTimer = null;
+function toast(msg, bad) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.className = bad ? "bad" : "";
+  el.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.display = "none"; }, 2600);
+}
+function editable() {
+  if (!L) return false;
+  if (L.status === "archived") { toast("보관된 리그는 수정할 수 없습니다 — 리그 목록에서 다시 활성화하세요", true); return false; }
+  return true;
+}
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: body !== undefined ? { "Content-Type": "application/json" } : {},
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  return { status: res.status, data };
+}
+function persist() {
+  if (!L) return;
+  $("save-state").textContent = "저장 대기…";
+  $("save-state").className = "save-state saving";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 600);
+}
+async function doSave() {
+  if (saving) { pendingSave = true; return; }
+  saving = true;
+  const r = await api("PUT", `/api/league/${L.id}`, L);
+  saving = false;
+  if (r.status === 200) {
+    L.rev = r.data.rev;
+    $("save-state").textContent = "✓ 저장됨";
+    $("save-state").className = "save-state saved";
+  } else if (r.status === 409) {
+    toast("다른 곳에서 먼저 저장됨 — 최신 상태를 다시 불러옵니다", true);
+    await loadLeague(L.id);
+  } else if (r.status === 401) {
+    showAuth(false);
+  } else {
+    toast("저장 실패: " + (r.data?.error || r.status), true);
+  }
+  if (pendingSave) { pendingSave = false; doSave(); }
+}
+/* 변경 커밋: 재계산 + 렌더 + 저장 예약 */
+function commit() {
+  calc = E.recalc(L);
+  renderAll();
+  persist();
+}
+
+/* ── 인증 ── */
+function showAuth(setup) {
+  $("auth").hidden = false;
+  $("auth-title").textContent = setup ? "관리자 비밀번호 설정" : "관리자 로그인";
+  $("auth-desc").textContent = setup
+    ? "처음 오셨네요! 관리자 비밀번호를 만들어주세요 (6자 이상). 이 비밀번호로 모든 리그를 관리합니다."
+    : "";
+  $("auth-pw").value = "";
+  $("auth-err").textContent = "";
+  $("auth-go").onclick = async () => {
+    const pw = $("auth-pw").value;
+    const r = await api("POST", setup ? "/api/setup" : "/api/login", { password: pw });
+    if (r.status === 200) { $("auth").hidden = true; boot(); }
+    else $("auth-err").textContent = r.data?.error || "실패";
+  };
+  $("auth-pw").onkeydown = e => { if (e.key === "Enter") $("auth-go").click(); };
+  $("auth-pw").focus();
+}
+$("logout-btn").onclick = async () => { await api("POST", "/api/logout"); location.reload(); };
+
+/* ── 부트 ── */
+async function boot() {
+  const r = await api("GET", "/api/system");
+  SYS = r.data;
+  if (SYS.needsSetup) return showAuth(true);
+  if (!SYS.authed) return showAuth(false);
+  const act = SYS.leagues.find(l => l.status === "active") || SYS.leagues[0];
+  if (act) await loadLeague(act.id);
+  else { L = null; calc = null; showView("home"); renderHome(); }
+}
+async function loadLeague(id) {
+  const r = await api("GET", `/api/league/${id}`);
+  if (r.status !== 200) { toast("리그를 불러오지 못했습니다", true); return; }
+  L = r.data;
+  calc = E.recalc(L);
+  $("brand-name").innerHTML = `${esc(L.name)}<em>ADMIN</em>`;
+  F.week = E.weekOf(L, F.date);
+  showView(curView === undefined ? "home" : curView);
+  renderAll();
+}
+
+/* ══════════ 홈: 리그 목록 + 체크리스트 ══════════ */
+const CHECKS = [
+  { key: "home",  label: "리그 정보", st: () => ({ done: !!(L.name && L.start), text: `${L.start || "시작일 미정"} ~ ${L.end || "종료일 미정"}` }) },
+  { key: "users", label: "선수 등록", st: () => ({ done: L.players.length > 0, text: `${L.players.length}명 참가` }) },
+  { key: "tier",  label: "티어 배치", st: () => { const left = activePlayers().filter(p => !p.tier).length;
+      return { done: L.players.length > 0 && left === 0, text: left ? `${left}명 미배치` : "전원 배치 완료" }; } },
+  { key: "skill", label: "스킬 티어", st: () => ({ done: true, text: "54종 · 기본값 적용" }) },
+  { key: "board", label: "팀 편성", st: () => ({ done: activeTeams().length > 0, text: `${activeTeams().length}팀 · 소속 ${activePlayers().filter(p => p.team).length}명` }) },
+  { key: "draft", label: "드래프트", st: () => L.draft.done ? { done: true, text: "완료" } : L.draft.started ? { done: false, text: `ROUND ${L.draft.round} 진행 중` } : { done: false, text: "시작 전" } },
+];
+async function renderHome() {
+  // 리그 목록
+  const r = await api("GET", "/api/system");
+  SYS = r.data;
+  $("lg-list").innerHTML = SYS.leagues.map(lg => `
+    <div class="lg-card${L && lg.id === L.id ? " on" : ""}" data-lg="${lg.id}" style="margin-bottom:9px">
+      <div class="lg-head"><b>${esc(lg.name)}</b>
+        <span class="chip${lg.status === "active" ? " ok" : ""}">${lg.status === "active" ? "진행 중" : "보관"}</span></div>
+      <div class="lg-meta"><span class="chip">${lg.start || "?"} ~ ${lg.end || "?"}</span></div>
+      ${L && lg.id === L.id ? `
+      <div class="lg-edit">
+        <div class="row">이름 <input class="txt" id="lg-name" value="${esc(L.name)}" style="flex:1"></div>
+        <div class="row">기간 <input class="txt" type="date" id="lg-start" value="${L.start || ""}"> ~
+          <input class="txt" type="date" id="lg-end" value="${L.end || ""}"></div>
+        <p class="tier-note" style="margin:0; font-size:11px">기간은 리그 진행 중에도 수정 가능 — 주차가 자동 재산출됩니다</p>
+        <div class="row">
+          <button class="btn sm" type="button" id="lg-archive">${L.status === "active" ? "보관 처리" : "다시 활성화"}</button>
+        </div>
+      </div>` : ""}
+    </div>`).join("") || `<p class="tier-note">아직 리그가 없습니다 — 아래에서 첫 리그를 만들어주세요 🏆</p>`;
+
+  $("lg-list").querySelectorAll(".lg-card").forEach(c => c.onclick = e => {
+    if (e.target.closest("input,button")) return;
+    const id = +c.dataset.lg;
+    if (!L || id !== L.id) loadLeague(id);
+  });
+  if (L) {
+    const nameEl = $("lg-name"), sEl = $("lg-start"), eEl = $("lg-end");
+    if (nameEl) {
+      nameEl.onchange = () => { L.name = nameEl.value.trim() || L.name; $("brand-name").innerHTML = `${esc(L.name)}<em>ADMIN</em>`; commit(); };
+      sEl.onchange = () => { L.start = sEl.value; commit(); };
+      eEl.onchange = () => { L.end = eEl.value; commit(); };
+      $("lg-archive").onclick = () => {
+        L.status = L.status === "active" ? "archived" : "active";
+        commit(); renderHome();
+      };
+    }
+  }
+  // 체크리스트
+  $("home-check").innerHTML = !L ? "" : `
+    <h2><small>SETUP</small>리그 셋업 체크리스트</h2>
+    ${L.status === "archived" ? `<div class="arch-banner">📦 보관된 리그 — 조회 전용입니다. 수정하려면 "다시 활성화"</div>` : ""}
+    <div class="ck-list">
+    ${CHECKS.map((c, i) => {
+      const s = c.st();
+      const divider = i === 4 ? `<div class="ck-divider">여기까지 완료되면 리그 생성 완료</div>` : "";
+      return divider + `<div class="ck-item${s.done ? " ok" : ""}">
+        <span class="ck-mark">${s.done ? "✓" : i + 1}</span>
+        <div class="ck-body"><b>${c.label}</b><small>${esc(s.text)}</small></div>
+        <button class="btn sm" type="button" data-goto="${c.key === "home" ? "home" : c.key}">이동 →</button>
+      </div>`;
+    }).join("")}
+    <div class="ck-item ok" style="border-color:color-mix(in srgb, var(--accent) 45%, transparent)">
+      <span class="ck-mark">▶</span>
+      <div class="ck-body"><b>리그 운영</b><small>경기 입력 · 팀 순위 · 거래 내역 · 주간 갱신</small></div>
+      <button class="btn sm primary" type="button" data-goto="ops">열기 →</button>
+    </div>
+    </div>`;
+}
+$("lg-add-btn").onclick = () => { $("lg-new").hidden = false; $("new-lg-name").focus(); };
+$("new-lg-cancel").onclick = () => { $("lg-new").hidden = true; };
+$("new-lg-create").onclick = async () => {
+  const name = $("new-lg-name").value.trim();
+  if (!name) return toast("리그 이름을 입력하세요", true);
+  const r = await api("POST", "/api/leagues", { name, start: $("new-lg-start").value, end: $("new-lg-end").value });
+  if (r.status !== 200) return toast(r.data?.error || "생성 실패", true);
+  $("lg-new").hidden = true;
+  $("new-lg-name").value = "";
+  toast(`"${name}" 리그가 만들어졌습니다 — 선수 등록부터 시작하세요!`);
+  await loadLeague(r.data.id);
+};
+
+/* ══════════ 유저 관리 ══════════ */
+function renderUsers() {
+  if (!L) return;
+  const rows = [];
+  const inLeague = new Map(L.players.map(p => [p.userId, p]));
+  for (const p of [...L.players].sort(sortP)) {
+    const team = T(p.team);
+    rows.push(`<div class="u-row">
+      ${badge(p.tier)}
+      <span class="name">${esc(p.name)}</span>
+      <span class="st">${team ? esc(team.name) + " 소속" : p.tier ? "참가 중" : "참가 중 · 티어 미배치"}${p.active === false ? " · 비활성" : ""}</span>
+      <select class="add-skill" data-pos="${p.id}">
+        ${["미지정", ...L.config.positions].map(o => `<option ${(p.pos ?? "미지정") === o ? "selected" : ""}>${o}</option>`).join("")}
+      </select>
+      <button class="btn sm" type="button" data-unreg="${p.id}">${canRemove(p) ? "참가 해제" : (p.active === false ? "복귀" : "비활성")}</button>
+    </div>`);
+  }
+  for (const u of [...SYS.users].sort(byName)) {
+    if (inLeague.has(u.id)) continue;
+    rows.push(`<div class="u-row">
+      <span class="badge" style="--tc:#4a5675">—</span>
+      <span class="name">${esc(u.name)}</span>
+      <span class="st">미참가</span>
+      <button class="btn sm primary" type="button" data-register="${u.id}">리그에 등록</button>
+      <button class="btn sm danger-line" type="button" data-deluser="${u.id}">✕ 삭제</button>
+    </div>`);
+  }
+  $("user-list").innerHTML = rows.join("") || '<p class="tier-note">유저가 없습니다 — 위에서 추가하세요</p>';
+  $("user-list").querySelectorAll("[data-pos]").forEach(sel => sel.onchange = () => {
+    if (!editable()) return renderUsers();
+    P(+sel.dataset.pos).pos = sel.value === "미지정" ? null : sel.value;
+    commit();
+  });
+}
+function canRemove(p) {
+  return !p.team && !L.matches.some(m => m.red.players.includes(p.id) || m.blue.players.includes(p.id))
+    && !L.adjusts.some(a => a.playerId === p.id);
+}
+function registerUser(userId) {
+  if (!editable()) return;
+  const u = SYS.users.find(u => u.id === userId);
+  if (!u || L.players.some(p => p.userId === userId)) return;
+  L.players.push({ id: L.seq.player++, userId, name: u.name, tier: null, initialTier: null,
+    pos: null, team: null, price: null, round: 0, promoCredited: false, active: true });
+  commit();
+}
+async function deleteUser(userId) {
+  const u = SYS.users.find(u => u.id === userId);
+  if (!u) return;
+  if (!confirm(`유저 "${u.name}"을(를) 완전히 삭제할까요? 다른 리그에 등록돼 있으면 삭제되지 않습니다.`)) return;
+  const r = await api("DELETE", `/api/users/${userId}`);
+  if (r.status !== 200) return toast(r.data?.error || "삭제 실패", true);
+  SYS.users = SYS.users.filter(x => x.id !== userId);
+  toast(`유저 "${u.name}" 삭제됨`);
+  renderUsers();
+}
+async function addUser(name) {
+  const r = await api("POST", "/api/users", { name });
+  if (r.status === 200) { SYS.users.push(r.data); return r.data; }
+  if (r.status === 409) return SYS.users.find(u => u.name === name.trim());
+  toast(r.data?.error || "추가 실패", true);
+  return null;
+}
+$("add-user").onclick = async () => {
+  const name = $("new-user").value.trim();
+  if (!name) return;
+  const u = await addUser(name);
+  $("new-user").value = "";
+  if (u) toast(`유저 "${u.name}" 추가됨`);
+  renderUsers();
+};
+$("new-user").addEventListener("keydown", e => { if (e.key === "Enter") $("add-user").click(); });
+$("bulk-add").onclick = async () => {
+  if (!editable()) return;
+  const lines = $("bulk-users").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!lines.length) return;
+  let n = 0;
+  for (const name of lines) {
+    const u = await addUser(name);
+    if (u && !L.players.some(p => p.userId === u.id)) {
+      L.players.push({ id: L.seq.player++, userId: u.id, name: u.name, tier: null, initialTier: null,
+        pos: null, team: null, price: null, round: 0, promoCredited: false, active: true });
+      n++;
+    }
+  }
+  $("bulk-users").value = "";
+  toast(`${n}명 리그 등록 완료`);
+  commit();
+}
+
+/* ══════════ 티어 배치 ══════════ */
+function tierRowHTML(t) {
+  const withCap = t !== "C-";
+  const list = activePlayers().filter(p => p.tier === t).sort(byName);
+  const cap = L.tiers[t].cap;
+  const over = withCap && cap != null && list.length > cap;
+  return `
+    <div class="trow" data-tier="${t}" style="--tc:${TIER_COLOR[t]}">
+      <div class="trow-head">
+        <span class="badge">${t}</span>
+        <label class="mini-inp">급여 <input type="number" data-sal="${t}" value="${L.tiers[t].sal}" min="0"></label>
+        <label class="mini-inp">MMR <input type="number" data-mmr="${t}" value="${L.tiers[t].mmr}" min="0" step="100" style="width:62px"></label>
+        ${withCap ? `<label class="mini-inp">정원 <input type="number" data-cap="${t}" value="${cap ?? 0}" min="0"></label>
+        <span class="cap${over ? " bad" : ""}">${list.length}/${cap ?? 0}${over ? " ⚠" : ""}</span>`
+        : `<span class="cap">${list.length}명 · 정원 없음</span>`}
+      </div>
+      <div class="trow-drop">
+        ${list.map(p => `<span class="p-chip" draggable="true" data-id="${p.id}" style="--tc:${TIER_COLOR[t]}">
+          ${badge(p.tier)}${esc(p.name)}
+          <button type="button" data-unplace="${p.id}">✕</button></span>`).join("") || '<span class="hint">여기로 드래그</span>'}
+      </div>
+    </div>`;
+}
+function renderTier() {
+  if (!L) return;
+  const free = activePlayers().filter(p => p.tier === null).sort(byName);
+  $("tpool-count").textContent = free.length;
+  $("tpool").innerHTML = free.map(p => `
+    <div class="card${selected === p.id ? " selected" : ""}" style="--tc:var(--dim)" draggable="true" data-id="${p.id}">
+      <span class="badge" style="--tc:#4a5675">?</span>
+      <span class="name">${esc(p.name)}</span><span class="sal">미배치</span>
+    </div>`).join("");
+  const sumCaps = ORDER.filter(t => t !== "C-").reduce((s, t) => s + (L.tiers[t].cap || 0), 0);
+  const placed = activePlayers().filter(p => p.tier).length;
+  $("tier-wrap").innerHTML = `
+    <p class="tier-note">티어 = <b>스타트 MMR·급여</b>를 결정 — 매주 월요일 <b>MMR 순위대로 정원을 위에서부터 채워</b> 재배치됩니다 (M2)</p>
+    ${sumCaps > placed && placed > 0 ? `<div class="warn-banner">⚠ 정원 합계(${sumCaps}) &gt; 배치 인원(${placed}) — 첫 주간 갱신 때 하위 티어가 비면서 전원이 상향 배치됩니다. <b>정원을 실제 인원에 맞추세요</b></div>` : ""}
+    ${ORDER.map(t => tierRowHTML(t)).join("")}`;
+  $("tier-wrap").querySelectorAll("[data-sal]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderTier();
+    L.tiers[inp.dataset.sal].sal = Math.max(0, +inp.value || 0); commit(); });
+  $("tier-wrap").querySelectorAll("[data-mmr]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderTier();
+    L.tiers[inp.dataset.mmr].mmr = Math.max(0, +inp.value || 0); commit(); });
+  $("tier-wrap").querySelectorAll("[data-cap]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderTier();
+    L.tiers[inp.dataset.cap].cap = Math.max(0, +inp.value || 0); commit(); });
+}
+function placeTier(p, t) {
+  if (!editable()) return;
+  p.tier = t; p.initialTier = t;             // 이 보드는 "최초 배치" — 스타트 MMR 기준점
+  if (!p.team && p.round === 0) p.round = E.HI_TIERS.includes(t) ? 1 : 2;
+  commit();
+}
+
+/* ══════════ 스킬 티어 ══════════ */
+function renderSkill() {
+  if (!L) return;
+  const ownerOf = n => activeTeams().find(t => t.skills.includes(n));
+  $("skill-wrap").innerHTML = `
+    <div class="skill-top">
+      <p class="tier-note">스킬 54종은 <b>고정 목록</b> — 리그마다 <b>티어만</b> 드래그로 확정 · <b>색 점 = 소유 팀</b> · 아이콘은 public/icons/스킬명.png가 있으면 자동 표시</p>
+      <button class="btn" type="button" id="skill-reset">기본값 복원</button>
+    </div>
+    ${["S", "A", "B", "C"].map(t => {
+      const list = Object.keys(L.skillTier).filter(n => L.skillTier[n] === t).sort((a, b) => a.localeCompare(b, "ko"));
+      return `<div class="trow" data-stier="${t}" style="--tc:${TIER_COLOR[t]}">
+        <div class="trow-head">
+          <span class="badge">${t}</span>
+          <label class="mini-inp">팀 소유 상한 <input type="number" data-scap="${t}" value="${L.config.skillCap[t]}" min="0"></label>
+          <label class="mini-inp">구매 가격 <input type="number" data-sprice="${t}" value="${L.config.skillPrice[t]}" min="0"></label>
+          <span class="cap">${list.length}종</span>
+        </div>
+        <div class="trow-drop">
+          ${list.map(n => {
+            const owner = ownerOf(n);
+            return `<span class="p-chip${selectedSkill === n ? " selected" : ""}" draggable="true" data-skill="${esc(n)}" style="--tc:${TIER_COLOR[t]}"
+                  ${owner ? `title="소유: ${esc(owner.name)}"` : ""}>
+              <span class="ico">${sic(n)}</span>${esc(n)}
+              ${owner ? `<span class="own-dot" style="background:${owner.color}; color:${owner.color}"></span>` : ""}
+            </span>`;
+          }).join("") || '<span class="hint">여기로 드래그</span>'}
+        </div>
+      </div>`;
+    }).join("")}`;
+  $("skill-reset").onclick = () => {
+    if (!editable()) return;
+    L.skillTier = { ...E.SKILL_TIER_DEFAULT };
+    selectedSkill = null; commit();
+  };
+  $("skill-wrap").querySelectorAll("[data-scap]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderSkill();
+    L.config.skillCap[inp.dataset.scap] = Math.max(0, +inp.value || 0); commit(); });
+  $("skill-wrap").querySelectorAll("[data-sprice]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderSkill();
+    L.config.skillPrice[inp.dataset.sprice] = Math.max(0, +inp.value || 0); commit(); });
+}
+
+/* ══════════ 원장 ══════════ */
+function logLedger(type, text, extra) {
+  L.ledger.push({ id: L.seq.ledger++, type, at: today(), text, ...extra });
+}
+function movePlayer(p, newTeamId, silent) {
+  if (p.team === newTeamId) return;
+  const from = T(p.team), to = T(newTeamId);
+  // 감독이 팀을 떠나면 감독 지정 해제
+  if (from && from.managerId === p.id) from.managerId = null;
+  p.team = newTeamId ?? null;
+  if (!newTeamId) p.price = null;
+  if (silent) return;
+  if (from && !to)      logLedger("roster", `${from.name} — ${p.name} 방출`);
+  else if (!from && to) logLedger("roster", `${to.name} — ${p.name} 영입`);
+  else if (from && to)  logLedger("roster", `${p.name} 이적: ${from.name} → ${to.name}`);
+}
+const LEDGER_ICON = { trade: "🔁", coin: "💰", skill: "🛒", draft: "🔨", roster: "📤", adjust: "⚖️" };
+function renderLedger() {
+  const el = $("ledger-list"); if (!el || !L) return;
+  el.innerHTML = L.ledger.slice().reverse().map(l => `
+    <div class="l-row${l.canceled ? " cx" : ""}">
+      <span>${LEDGER_ICON[l.type] || "·"}</span>
+      <span style="flex:1">${esc(l.text)} <small style="color:var(--dim)">${l.at || ""}</small></span>
+      ${!l.canceled && (l.type === "coin" || l.type === "skill") && l.teamId != null
+        ? `<button type="button" data-cancel="${l.id}">취소</button>` : ""}
+    </div>`).join("") || '<div class="l-row" style="color:var(--dim)">아직 없음</div>';
+  el.querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => cancelLedger(+b.dataset.cancel));
+}
+function cancelLedger(id) {
+  if (!editable()) return;
+  const l = L.ledger.find(x => x.id === id);
+  if (!l || l.canceled) return;
+  const t = T(l.teamId);
+  if (!t) return toast("팀이 없어 취소할 수 없습니다", true);
+  if (l.type === "coin") {
+    t.coins = Math.max(0, t.coins - (l.delta || 0));
+    logLedger("coin", `↩ 취소: ${l.text}`, { teamId: t.id, delta: -(l.delta || 0), canceled: true });
+  } else if (l.type === "skill") {
+    t.skills = t.skills.filter(n => n !== l.skill);
+    t.coins += l.price || 0;
+    logLedger("skill", `↩ 취소: ${l.text} (+${l.price || 0}c 환불)`, { canceled: true });
+  }
+  l.canceled = true;
+  commit();
+}
+
+/* ══════════ 팀 편성 보드 ══════════ */
+function addTeam() {
+  if (!editable()) return;
+  if (activeTeams().length >= 4) return toast("팀은 최대 4개까지", true);
+  const color = TEAM_COLORS.find(c => !activeTeams().some(t => t.color === c)) || TEAM_COLORS[0];
+  L.teams.push({ id: L.seq.team++, name: `새 팀 ${activeTeams().length + 1}`, coach: "", managerId: null,
+    color, coins: 0, capBonus: 0, skills: [], active: true });
+  commit();
+}
+function delTeam(id) {
+  if (!editable()) return;
+  const t = T(id); if (!t) return;
+  const referenced = L.matches.some(m => m.red.team === id || m.blue.team === id)
+    || L.draft.log.some(l => l.teamId === id);
+  L.players.forEach(p => { if (p.team === id) { p.team = null; p.price = null; } });
+  if (referenced) { t.active = false; toast(`"${t.name}"은 경기 기록이 있어 비활성 처리했습니다 (기록 보존)`); }
+  else L.teams.splice(L.teams.indexOf(t), 1);
+  commit();
+}
+function renderBoard() {
+  if (!L) return;
+  const board = $("board"), c = L.config;
+  ["cap-total", "cap-hi", "cap-lo", "cap-skill"].forEach((id, i) => {
+    $(id).value = [c.rosterCap.total, c.rosterCap.hi, c.rosterCap.lo, c.rosterCap.skill][i];
+  });
+  const q = $("q").value.trim().toLowerCase();
+  const free = activePlayers().filter(p => p.team === null && p.tier !== null).sort(sortP);
+  $("pool-count").textContent = free.length;
+  $("pool").innerHTML = free
+    .filter(p => !q || p.name.toLowerCase().includes(q) || (p.tier || "").toLowerCase() === q)
+    .map(p => `
+      <div class="card${selected === p.id ? " selected" : ""}" style="--tc:${TIER_COLOR[p.tier]}" draggable="true" data-id="${p.id}">
+        ${badge(p.tier)}
+        <span class="name">${esc(p.name)}</span>
+        <span class="mmr">${mmrOf(p) ?? "-"}</span><span class="sal">₩${salOf(p)}</span>
+      </div>`).join("");
+
+  const teams = activeTeams();
+  const mark = board.querySelector(".center-mark").outerHTML;
+  board.style.gridTemplateColumns = teams.length === 1 ? "1fr" : "1fr 1fr";
+  board.style.gridTemplateRows = teams.length > 2 ? "1fr 1fr" : "1fr";
+  if (!teams.length) {
+    board.innerHTML = `<div class="board-empty">아직 팀이 없습니다<br><br>
+      <button class="btn primary" type="button" onclick="addTeam()">+ 첫 팀 만들기</button></div>` + mark;
+    board.querySelector(".center-mark").hidden = true;
+    if (tradeOpen) renderTrade();
+    return;
+  }
+  const freeSkills = Object.keys(L.skillTier).filter(n => !teams.some(t => t.skills.includes(n)));
+  board.innerHTML = teams.map(t => {
+    const list = activePlayers().filter(p => p.team === t.id).sort(sortP);
+    const sal = list.reduce((s, p) => s + salOf(p), 0);
+    const hi = list.filter(p => E.HI_TIERS.includes(p.tier)).length;
+    const lo = list.length - hi;
+    const tierOver = ["S", "A", "B", "C"].filter(g => t.skills.filter(n => E.groupOf(L.skillTier[n]) === g || L.skillTier[n] === g).length > c.skillCap[g]);
+    return `
+      <section class="team" data-team="${t.id}" style="--tc:${t.color}">
+        <div class="team-head">
+          <span class="tag"></span>
+          <input class="t-name" data-tname="${t.id}" value="${esc(t.name)}">
+          <span class="coach">감독
+            <select data-tcoach="${t.id}">
+              <option value="">미지정</option>
+              ${list.map(p => `<option value="${p.id}" ${t.managerId === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
+            </select></span>
+          <button class="t-del" type="button" data-delteam="${t.id}">✕ 삭제</button>
+        </div>
+        <div class="team-stats">
+          <span class="chip${list.length > c.rosterCap.total ? " bad" : ""}">인원 <b>${list.length}</b>/${c.rosterCap.total}</span>
+          <span class="chip${hi > c.rosterCap.hi ? " bad" : ""}">S~A- <b>${hi}</b>/${c.rosterCap.hi}</span>
+          <span class="chip${lo > c.rosterCap.lo ? " bad" : ""}">B+~C- <b>${lo}</b>/${c.rosterCap.lo}</span>
+          <span class="chip sal">급여 ${sal}</span>
+          <span class="chip">급여 상한 ${c.salaryCap + (t.capBonus || 0)}</span>
+          <label class="mini-inp coin-edit">코인 <input type="number" data-coin="${t.id}" value="${t.coins}" min="0"></label>
+        </div>
+        <div class="team-skills">
+          <span class="chip${t.skills.length > c.rosterCap.skill ? " bad" : ""}">스킬 <b>${t.skills.length}</b>/${c.rosterCap.skill}</span>
+          ${t.skills.map(n => `<span class="s-own" style="border-color:color-mix(in srgb, ${TIER_COLOR[L.skillTier[n]] || "#888"} 40%, transparent)">
+            ${sic(n)} ${esc(n)}<button type="button" data-steam="${t.id}" data-sname="${esc(n)}">✕</button></span>`).join("")}
+          <select class="add-skill" data-addskill="${t.id}">
+            <option value="">+ 스킬 구매</option>
+            ${["S", "A", "B", "C"].map(g => `<optgroup label="${g}급 · ${c.skillPrice[g]}코인">
+              ${freeSkills.filter(n => L.skillTier[n] === g).map(n =>
+                `<option value="${esc(n)}" ${c.skillPrice[g] > t.coins ? "disabled" : ""}>${esc(n)} — ${c.skillPrice[g]}c${c.skillPrice[g] > t.coins ? " (코인 부족)" : ""}</option>`).join("")}
+            </optgroup>`).join("")}
+          </select>
+          ${tierOver.length ? `<span class="chip bad">⚠ ${tierOver.join("·")}급 상한 초과</span>` : ""}
+        </div>
+        <div class="roster">
+          ${list.length ? list.map(p => `
+            <span class="p-chip" draggable="true" data-id="${p.id}" style="--tc:${t.color}">
+              ${badge(p.tier)}${esc(p.name)}${t.managerId === p.id ? " 👑" : ""}${p.price != null ? `<small style="color:var(--gold);font-size:10px">${p.price}c</small>` : ""}
+              <button type="button" data-remove="${p.id}">✕</button>
+            </span>`).join("")
+          : '<span class="hint">여기로 선수를 끌어다 놓으세요</span>'}
+        </div>
+      </section>`;
+  }).join("") + mark;
+  board.querySelector(".center-mark").hidden = teams.length !== 4;
+
+  board.querySelectorAll("[data-tname]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderBoard();
+    T(+inp.dataset.tname).name = inp.value.trim() || "이름 없는 팀"; commit(); });
+  board.querySelectorAll("[data-tcoach]").forEach(sel => sel.onchange = () => {
+    if (!editable()) return renderBoard();
+    const t = T(+sel.dataset.tcoach);
+    t.managerId = sel.value ? +sel.value : null;
+    t.coach = sel.value ? P(+sel.value)?.name || "" : "";
+    commit(); });
+  board.querySelectorAll("[data-coin]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderBoard();
+    const t = T(+inp.dataset.coin);
+    const v = Math.max(0, +inp.value || 0);
+    const delta = v - t.coins;
+    t.coins = v;
+    if (delta) logLedger("coin", `${t.name} 코인 ${delta > 0 ? "+" : ""}${delta} (관리자 조정)`, { teamId: t.id, delta });
+    commit(); });
+  board.querySelectorAll("[data-addskill]").forEach(sel => sel.onchange = () => {
+    if (!sel.value) return;
+    if (!editable()) return renderBoard();
+    const t = T(+sel.dataset.addskill);
+    const price = c.skillPrice[L.skillTier[sel.value]] || 0;
+    if (t.coins < price) return;
+    t.coins -= price;
+    t.skills.push(sel.value);
+    logLedger("skill", `${t.name} — ${sel.value} 구매 (-${price}c)`, { teamId: t.id, skill: sel.value, price });
+    commit(); });
+  if (tradeOpen) renderTrade();
+}
+["cap-total", "cap-hi", "cap-lo", "cap-skill"].forEach((id, i) => {
+  const keys = ["total", "hi", "lo", "skill"];
+  $(id).onchange = () => {
+    if (!editable()) return renderBoard();
+    L.config.rosterCap[keys[i]] = Math.max(0, +$(id).value || 0); commit(); };
+});
+$("add-team").onclick = addTeam;
+$("q").addEventListener("input", renderBoard);
+
+/* ── 트레이드 ── */
+const trade = { a: null, b: null, pa: 0, pb: 0, coin: 0 };
+$("trade-btn").onclick = () => { tradeOpen = !tradeOpen; renderTrade(); };
+function renderTrade() {
+  const el = $("trade-panel");
+  el.hidden = !tradeOpen;
+  if (!tradeOpen || !L) return;
+  const teams = activeTeams();
+  if (trade.a == null || !T(trade.a)) trade.a = teams[0]?.id ?? null;
+  if (trade.b == null || !T(trade.b)) trade.b = teams[1]?.id ?? teams[0]?.id ?? null;
+  const teamOpt = key => teams.map(t => `<option value="${t.id}" ${trade[key] === t.id ? "selected" : ""}>${esc(t.name)}</option>`).join("");
+  const playerOpt = (key, tid) => `<option value="0">선수 없음 (편도/코인만)</option>` +
+    activePlayers().filter(p => p.team === tid).sort(sortP)
+      .map(p => `<option value="${p.id}" ${trade[key] === p.id ? "selected" : ""}>[${p.tier ?? "?"}] ${esc(p.name)}${T(tid)?.managerId === p.id ? " 👑" : ""}</option>`).join("");
+  const trLog = L.ledger.filter(l => l.type === "trade");
+  el.innerHTML = `
+    <h3>TRADE · 트레이드</h3>
+    <div class="f-row">
+      <select class="txt" data-tr="a">${teamOpt("a")}</select>
+      <select class="txt" data-tr="pa">${playerOpt("pa", trade.a)}</select>
+      <span style="color:var(--dim); font-weight:900; font-size:15px">⇄</span>
+      <select class="txt" data-tr="b">${teamOpt("b")}</select>
+      <select class="txt" data-tr="pb">${playerOpt("pb", trade.b)}</select>
+      <label class="mini-inp">코인 (앞팀→뒷팀, 음수 가능) <input type="number" data-tr="coin" value="${trade.coin}" style="width:64px"></label>
+      <button class="btn sm primary" type="button" id="trade-run">실행</button>
+    </div>
+    <div class="warn-box" id="trade-msg">${trade.a === trade.b ? '<span class="e">⚠ 서로 다른 두 팀을 선택하세요</span>' : ""}</div>
+    ${trLog.length ? `<p class="tier-note" style="margin:0">${trLog.slice(-3).reverse().map(l => `🔁 ${esc(l.text)}`).join("<br>")}</p>` : ""}`;
+  el.querySelectorAll("[data-tr]").forEach(inp => inp.onchange = () => {
+    const k = inp.dataset.tr;
+    if (k === "coin") trade.coin = Math.trunc(+inp.value || 0);
+    else { trade[k] = +inp.value; if (k === "a") trade.pa = 0; if (k === "b") trade.pb = 0; }
+    renderTrade();
+  });
+  $("trade-run").onclick = () => {
+    if (!editable()) return;
+    const A = T(trade.a), B = T(trade.b);
+    const msg = $("trade-msg");
+    if (!A || !B || A === B) { msg.innerHTML = '<span class="e">⚠ 서로 다른 두 팀을 선택하세요</span>'; return; }
+    if (!trade.pa && !trade.pb && !trade.coin) { msg.innerHTML = '<span class="e">⚠ 넘길 선수나 코인을 지정하세요</span>'; return; }
+    if (trade.coin > 0 && A.coins < trade.coin) { msg.innerHTML = `<span class="e">⚠ ${esc(A.name)} 코인 부족 (${A.coins})</span>`; return; }
+    if (trade.coin < 0 && B.coins < -trade.coin) { msg.innerHTML = `<span class="e">⚠ ${esc(B.name)} 코인 부족 (${B.coins})</span>`; return; }
+    const pa = trade.pa ? P(trade.pa) : null, pb = trade.pb ? P(trade.pb) : null;
+    if (pa) movePlayer(pa, B.id, true);
+    if (pb) movePlayer(pb, A.id, true);
+    A.coins -= trade.coin; B.coins += trade.coin;
+    logLedger("trade", `${A.name} ${pa ? pa.name : "—"} ⇄ ${B.name} ${pb ? pb.name : "—"}${trade.coin ? ` (코인 ${Math.abs(trade.coin)} ${trade.coin > 0 ? A.name + "→" + B.name : B.name + "→" + A.name})` : ""}`);
+    trade.pa = 0; trade.pb = 0; trade.coin = 0;
+    commit();
+  };
+}
+
+/* ══════════ 경매 드래프트 ══════════ */
+const D = () => L.draft;
+function acquired(teamId, g) {
+  const mgr = managerSet();
+  return activePlayers().filter(p => p.team === teamId && !mgr.has(p.id) && p.tier && E.groupOf(p.tier) === g).length;
+}
+function renderPools() {
+  const cand = activePlayers().filter(p => !p.team);
+  for (const r of [0, 1, 2]) {
+    const list = cand.filter(p => (p.round ?? 0) === r).sort(sortP);
+    $("rc" + r).textContent = list.length;
+    $("rl" + r).innerHTML = list.map(p => `
+      <span class="p-chip" draggable="true" data-id="${p.id}" style="--tc:${p.tier ? TIER_COLOR[p.tier] : "#4a5675"}">
+        ${badge(p.tier)}${esc(p.name)}${p.tier ? "" : " <small style='color:var(--dim)'>미배치</small>"}
+      </span>`).join("") || `<span class="hint">${r === 0 ? "제외할 선수를 끌어다 놓으세요" : "여기로 드래그"}</span>`;
+  }
+}
+function renderDraft() {
+  if (!L) return;
+  const d = D(), c = L.config;
+  const pre = !d.started && !d.done;
+  $("pool-assign").hidden = !pre;
+  $("stage").hidden = pre;
+  $("draft-side").hidden = pre;
+  $("draft-reset").hidden = !d.started && !d.done;
+  if (pre) renderPools();
+
+  $("coin-r1").value = c.coinR1; $("coin-r2").value = c.coinR2;
+  $("lim-s").value = c.auctionLimit.S; $("lim-a").value = c.auctionLimit.A;
+  $("lim-b").value = c.auctionLimit.B; $("lim-c").value = c.auctionLimit.C;
+  ["coin-r1", "lim-s", "lim-a", "lim-b", "lim-c"].forEach(id => $(id).disabled = d.started);
+  $("coin-r2").disabled = d.started && d.round === 2;
+
+  const cand = activePlayers().filter(p => p.tier && !p.team);
+  $("round-label").textContent = d.done ? "완료" : pre ? "SETUP" : `ROUND ${d.round}`;
+  $("round-left").textContent = d.done ? "드래프트가 끝났습니다"
+    : pre ? `1R ${cand.filter(p => p.round === 1).length}명 · 2R ${cand.filter(p => p.round === 2).length}명 · 제외 ${activePlayers().filter(p => !p.team && p.round === 0).length}명`
+    : `남은 선수 ${d.queue.length + (d.current ? 1 : 0)}명`;
+  // 상한 슬롯 사전 검증
+  if (pre) {
+    const totalSlots = activeTeams().length * (c.auctionLimit.S + c.auctionLimit.A + c.auctionLimit.B + c.auctionLimit.C);
+    const poolSize = cand.filter(p => p.round === 1 || p.round === 2).length;
+    $("assign-note").innerHTML = poolSize > totalSlots
+      ? `<span style="color:var(--gold)">⚠ 풀 인원(${poolSize}) &gt; 전 팀 상한 슬롯(${totalSlots}) — 다 팔릴 수 없습니다. 상한이나 풀을 조정하세요</span>`
+      : `선수 칩을 끌어서 라운드를 정하세요 · 시작하면 <b>설정과 풀이 잠깁니다</b>`;
+  }
+
+  const st = $("stage");
+  if (d.done) {
+    st.innerHTML = `
+      <div class="label">DRAFT COMPLETE</div>
+      <div class="stage-card"><div class="pname">🏁 드래프트 완료</div>
+        <div class="pmeta">팀 편성 화면에서 결과를 확인하고 수동 조정할 수 있어요</div></div>
+      <button class="btn primary big" type="button" data-goto="board">팀 편성으로 →</button>`;
+  } else if (!pre && !d.current) {
+    st.innerHTML = `
+      <div class="label">ROUND ${d.round} · AUCTION</div>
+      <div class="stage-card"><div class="stage-idle">버튼을 누르면 이번 라운드 풀에서<br>선수가 <b style="color:var(--accent)">랜덤으로</b> 지명됩니다</div></div>
+      <div class="stage-actions">
+        <button class="btn primary big" type="button" id="draw-btn">🎲 다음 선수 추첨</button>
+        ${d.log.some(l => l.teamId != null) ? `<button class="btn danger-line" type="button" id="undo-btn">↩ 직전 낙찰 취소</button>` : ""}
+      </div>`;
+    $("draw-btn").onclick = draw;
+    const ub = $("undo-btn"); if (ub) ub.onclick = undoAward;
+  } else if (!pre) {
+    const p = P(d.current);
+    const g = E.groupOf(p.tier);
+    st.innerHTML = `
+      <div class="label">ROUND ${d.round} · NOW BIDDING</div>
+      <div class="stage-card pop">
+        ${badge(p.tier)}
+        <div class="pname">${esc(p.name)}</div>
+        <div class="pmeta">MMR <b>${mmrOf(p) ?? "-"}</b> · 급여 <b>${salOf(p)}</b> · ${g}급 상한 ${c.auctionLimit[g]}명</div>
+      </div>
+      <div class="bid-row">
+        ${activeTeams().map(t => {
+          const full = acquired(t.id, g) >= c.auctionLimit[g];
+          return `<button class="team-pick${pickedTeam === t.id ? " on" : ""}" type="button" style="--tc:${t.color}" data-pick="${t.id}"
+                  ${full ? "disabled" : ""}>
+            ${esc(t.name)}<small>${full ? g + "급 마감" : t.coins + " 코인"}</small>
+          </button>`;
+        }).join("")}
+        <input class="price" id="price" type="number" min="0" placeholder="낙찰 코인">
+      </div>
+      <div class="bid-error" id="bid-error"></div>
+      <div class="stage-actions">
+        <button class="btn primary" type="button" id="award-btn">🔨 낙찰</button>
+        <button class="btn danger-line" type="button" id="pass-btn">유찰 (뒤로)</button>
+      </div>`;
+    st.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => { pickedTeam = +b.dataset.pick; renderDraft(); });
+    $("award-btn").onclick = award;
+    $("pass-btn").onclick = pass;
+    $("price").focus();
+  }
+
+  $("q-count").textContent = d.queue.length;
+  $("queue-list").innerHTML = d.queue.map(id => {
+    const p = P(id); return p ? `<div class="q-item">${badge(p.tier)}${esc(p.name)}</div>` : "";
+  }).join("") || `<div class="q-item" style="color:var(--dim)">비었습니다</div>`;
+  $("log-list").innerHTML = d.log.slice().reverse().map(l => {
+    if (l.pass) return `<div class="log-item pass"><span class="who">${esc(l.name)}</span><span class="arrow">→</span>유찰<span class="cost">—</span></div>`;
+    if (l.excluded) return `<div class="log-item pass"><span class="who">${esc(l.name)}</span><span class="arrow">→</span>자동 제외(전팀 상한)<span class="cost">—</span></div>`;
+    const t = T(l.teamId);
+    if (!t) return `<div class="log-item pass"><span class="who">${esc(l.name)}</span><span class="arrow">→</span>(삭제된 팀)<span class="cost">${l.price}c</span></div>`;
+    return `<div class="log-item" style="--tc:${t.color}"><span class="who">${esc(l.name)}</span><span class="arrow">→</span><span class="team-n">${esc(t.name)}</span><span class="cost">${l.price}c</span></div>`;
+  }).join("") || `<div class="q-item" style="color:var(--dim)">아직 없음</div>`;
+
+  $("draft-teams").innerHTML = activeTeams().map(t => {
+    const mgr = managerSet();
+    const list = activePlayers().filter(p => p.team === t.id).sort(sortP);
+    const lims = ["S", "A", "B", "C"].map(g => {
+      const n = acquired(t.id, g), full = n >= c.auctionLimit[g];
+      return `<span class="mini${full ? " full" : ""}">${g} ${n}/${c.auctionLimit[g]}</span>`;
+    }).join("");
+    return `<div class="dteam" style="--tc:${t.color}">
+      <div class="t-head"><span class="tag"></span><b>${esc(t.name)}</b>
+        <span class="coins">${t.coins}<small>COIN</small></span></div>
+      <div class="picks">${lims}</div>
+      <div class="picks">${list.map(p => `<span class="mini"><i>${p.tier ?? "?"}</i>${esc(p.name)}${mgr.has(p.id) ? " 👑" : ""}</span>`).join("") || '<span class="mini" style="opacity:.5">선수 없음</span>'}</div>
+    </div>`;
+  }).join("");
+}
+["coin-r1", "coin-r2"].forEach((id, i) => $(id).onchange = () => {
+  if (!editable()) return renderDraft();
+  L.config[i ? "coinR2" : "coinR1"] = Math.max(0, +$(id).value || 0); commit(); });
+[["lim-s", "S"], ["lim-a", "A"], ["lim-b", "B"], ["lim-c", "C"]].forEach(([id, k]) => $(id).onchange = () => {
+  if (!editable()) return renderDraft();
+  L.config.auctionLimit[k] = Math.max(0, +$(id).value || 0); commit(); });
+$("start-draft").onclick = () => {
+  if (!editable()) return;
+  const d = D();
+  if (d.started) return;
+  if (!activeTeams().length) return toast("팀을 먼저 만들어주세요 (팀 편성)", true);
+  d.started = true; d.round = 1; d.current = null;
+  activeTeams().forEach(t => { t.coins = L.config.coinR1; });
+  logLedger("coin", `드래프트 시작 — 전 팀 코인 ${L.config.coinR1} 지급`);
+  const cand = activePlayers().filter(p => p.tier && !p.team);
+  d.queue = shuffle(cand.filter(p => p.round === 1).map(p => p.id));
+  d.poolR2 = shuffle(cand.filter(p => p.round === 2).map(p => p.id));
+  commit();
+  draw();
+};
+$("draft-reset").onclick = () => {
+  if (!editable()) return;
+  if (!confirm("드래프트 상태를 초기화합니다 (이미 배정된 로스터는 그대로 둡니다). 계속할까요?")) return;
+  L.draft = { started: false, done: false, round: 1, queue: [], poolR2: [], log: [], current: null };
+  commit();
+};
+function draw() {
+  const d = D();
+  if (!d.queue.length) return nextRound();
+  // 교착 방지: 모든 팀이 상한 도달 → 자동 제외
+  while (d.queue.length) {
+    const cid = d.queue[0];
+    const p = P(cid);
+    const g = E.groupOf(p.tier);
+    const anyone = activeTeams().some(t => acquired(t.id, g) < L.config.auctionLimit[g]);
+    if (anyone) break;
+    d.queue.shift();
+    p.round = 0;
+    d.log.push({ name: p.name, playerId: p.id, excluded: true });
+    toast(`${p.name} — 전 팀 ${g}급 상한 도달, 자동 경매 제외`);
+  }
+  if (!d.queue.length) return nextRound();
+  const pick = () => { d.current = d.queue.shift(); pickedTeam = null; commit(); };
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) return pick();
+  let ticks = 0;
+  $("stage").innerHTML = `<div class="label">ROUND ${d.round} · DRAWING…</div>
+    <div class="stage-card rolling"><div class="pname" id="roll">?</div></div>`;
+  const iv = setInterval(() => {
+    const any = P(d.queue[Math.random() * d.queue.length | 0]);
+    const el = $("roll"); if (el) el.textContent = any ? any.name : "?";
+    if (++ticks >= 12) { clearInterval(iv); pick(); }
+  }, 70);
+}
+function award() {
+  if (!editable()) return;
+  const d = D();
+  const p = P(d.current);
+  const t = T(pickedTeam);
+  const price = +$("price").value;
+  const err = $("bid-error");
+  if (!t) { err.textContent = "낙찰 팀을 선택하세요"; return; }
+  const g = E.groupOf(p.tier);
+  if (acquired(t.id, g) >= L.config.auctionLimit[g]) { err.textContent = `${t.name}은 ${g}급 상한 도달`; return; }
+  if ($("price").value === "" || !Number.isFinite(price) || price < 0) { err.textContent = "낙찰 코인을 입력하세요 (0 가능)"; return; }
+  if (price > t.coins) { err.textContent = `${t.name} 잔여 코인(${t.coins}) 초과`; return; }
+  t.coins -= price;
+  p.team = t.id; p.price = price;
+  d.log.push({ name: p.name, playerId: p.id, teamId: t.id, price });
+  logLedger("draft", `${t.name} — ${p.name} 낙찰 ${price}c`);
+  next();
+}
+function undoAward() {
+  if (!editable()) return;
+  const d = D();
+  for (let i = d.log.length - 1; i >= 0; i--) {
+    const l = d.log[i];
+    if (l.teamId == null) continue;
+    const p = P(l.playerId), t = T(l.teamId);
+    if (t) t.coins += l.price;
+    if (p) { p.team = null; p.price = null; d.queue.unshift(p.id); }
+    d.log.splice(i, 1);
+    d.done = false;
+    logLedger("draft", `↩ 낙찰 취소: ${l.name} (${l.price}c 환불)`);
+    commit();
+    return;
+  }
+}
+function pass() {
+  const d = D();
+  const p = P(d.current);
+  d.queue.push(p.id);
+  d.log.push({ name: p.name, playerId: p.id, pass: true });
+  next();
+}
+function next() {
+  const d = D();
+  d.current = null; pickedTeam = null;
+  if (d.started && !d.queue.length) nextRound();
+  else commit();
+}
+function nextRound() {
+  const d = D();
+  if (d.round === 1) {
+    d.round = 2;
+    activeTeams().forEach(t => { t.coins += L.config.coinR2; });   // 잔여 이월 + 추가 지급
+    logLedger("coin", `2라운드 시작 — 전 팀 코인 +${L.config.coinR2} (잔여 이월)`);
+    d.queue = [...d.poolR2];
+    if (!d.queue.length) d.done = true;
+  } else d.done = true;
+  commit();
+}
+
+/* ══════════ 경기 관리 ══════════ */
+const F = { date: today(), week: 1, type: "리그", red: null, blue: null,
+  redName: "", blueName: "", redPicks: new Set(), bluePicks: new Set(),
+  redSkills: new Set(), blueSkills: new Set(), result: null };
+
+function usedToday(side) {
+  const tid = F[side]; const used = new Set();
+  if (F.type !== "리그" || !tid) return used;
+  for (const m of L.matches) {
+    if (m.date !== F.date) continue;
+    for (const s of ["red", "blue"]) if (m[s].team === tid) (m[s].skills || []).forEach(n => used.add(n));
+  }
+  return used;
+}
+function renderOps() {
+  if (!L) return;
+  const c = L.config;
+  const isLeague = F.type === "리그";
+  const teams = activeTeams();
+  if (isLeague) {
+    if (F.red == null || !T(F.red)) F.red = teams[0]?.id ?? null;
+    if (F.blue == null || !T(F.blue)) F.blue = teams[1]?.id ?? null;
+  }
+  const pickInfo = side => {
+    const ids = [...F[side + "Picks"]];
+    return {
+      n: ids.length, ids,
+      sal: ids.reduce((s, id) => s + salOf(P(id)), 0),
+      mmr: ids.reduce((s, id) => s + (mmrOf(P(id)) ?? 0), 0),
+    };
+  };
+  const R = pickInfo("red"), B = pickInfo("blue");
+  const capOf = side => c.salaryCap + (isLeague ? (T(F[side])?.capBonus || 0) : 0);
+  const skillZone = side => {
+    const sel = F[side + "Skills"];
+    if (!isLeague) {   // 아마추어/프로: 스킬 자유 사용
+      return Object.keys(L.skillTier).sort((a, b) => a.localeCompare(b, "ko")).map(n => `
+        <button class="pickp${sel.has(n) ? " on" : ""}" type="button" data-msk="${side}:${esc(n)}" style="--sc:var(--accent)">
+          ${sic(n)} ${esc(n)}</button>`).join("");
+    }
+    const t = T(F[side]);
+    if (!t) return '<span class="hint">팀을 선택하세요</span>';
+    const used = usedToday(side);
+    return t.skills.map(n => `
+      <button class="pickp${sel.has(n) ? " on" : ""}" type="button" data-msk="${side}:${esc(n)}" style="--sc:${t.color}"
+        ${used.has(n) ? 'title="오늘 이미 사용 — 피어리스룰 경고"' : ""}>
+        ${sic(n)} ${esc(n)}${used.has(n) ? " ⚠" : ""}
+      </button>`).join("") || '<span class="hint">소유 스킬 없음 — 팀 편성에서 등록/구매</span>';
+  };
+  const warns = [];
+  if (isLeague) for (const side of ["red", "blue"]) {
+    const dup = [...F[side + "Skills"]].filter(n => usedToday(side).has(n));
+    if (dup.length) warns.push(`<span class="w">⚠ 피어리스룰: ${esc(teamName(F[side]))} — ${dup.join(", ")} 오늘 이미 사용</span>`);
+  }
+  if (R.n === 4 && B.n === 4) {
+    const diff = Math.abs(R.mmr - B.mmr);
+    warns.push(diff >= c.underdogGap
+      ? `<span class="w">⚡ 언더독: ${R.mmr < B.mmr ? sideName("red") : sideName("blue")} (합 ${diff}p 차)</span>`
+      : `<span class="i">MMR 합 ${R.mmr} vs ${B.mmr} — 언더독 아님</span>`);
+  } else warns.push(`<span class="i">각 팀 4명을 선택하세요 (${R.n} / ${B.n})</span>`);
+  for (const [s, info] of [["red", R], ["blue", B]]) {
+    if (info.sal > capOf(s)) warns.push(`<span class="w">💰 ${esc(sideName(s))} 급여 ${info.sal} &gt; ${capOf(s)} — 게임 내 -${Math.ceil((info.sal - capOf(s)) / 5) * 5}골 (경고만)</span>`);
+    if (F.type === "아마추어" && info.ids.some(id => E.HI_TIERS.includes(P(id).tier))) warns.push(`<span class="e">⚠ 아마추어는 B~C-만 — ${esc(sideName(s))} 자격 위반</span>`);
+    if (F.type === "프로" && info.ids.some(id => ["B-", "C+", "C", "C-"].includes(P(id).tier))) warns.push(`<span class="e">⚠ 프로는 S~B+만 — ${esc(sideName(s))} 자격 위반</span>`);
+    if (!isLeague && info.ids.some(id => !P(id).team)) warns.push(`<span class="w">⚠ 소속팀 없는 선수 참가 — 아마/프로는 소속팀 있는 선수만 (기획안 8-1)</span>`);
+  }
+  if (isLeague && F.red != null && F.red === F.blue) warns.push(`<span class="e">⚠ 같은 팀끼리는 경기 불가</span>`);
+
+  function sideName(s) { return isLeague ? teamName(F[s]) : (F[s + "Name"] || (s === "red" ? "레드" : "블루")); }
+  const sideHTML = (side, hex) => {
+    const picks = [...F[side + "Picks"]];
+    const info = side === "red" ? R : B;
+    const slots = Array.from({ length: 4 }, (_, i) => {
+      const id = picks[i];
+      if (id === undefined) return `<div class="slot empty">선수 ${i + 1}</div>`;
+      const p = P(id);
+      return `<div class="slot" style="--tc:${TIER_COLOR[p.tier]}">
+        ${badge(p.tier)}<b>${esc(p.name)}</b>
+        <button type="button" data-mp="${side}:${p.id}">✕</button></div>`;
+    }).join("");
+    const other = side === "red" ? "blue" : "red";
+    const pool = isLeague
+      ? activePlayers().filter(p => p.team === F[side] && p.tier)
+      : activePlayers().filter(p => p.tier && !F[other + "Picks"].has(p.id));
+    const color = isLeague ? (T(F[side])?.color || "#888") : (side === "red" ? "#ff4d6a" : "#5aa2ff");
+    return `
+    <div class="mf-side ${side}">
+      <div class="mf-head">
+        <span style="color:${hex}; font-size:11px; font-weight:800; letter-spacing:1px">${side.toUpperCase()}</span>
+        ${isLeague
+          ? `<select class="txt" data-f="${side}">${teams.map(t => `<option value="${t.id}" ${F[side] === t.id ? "selected" : ""}>${esc(t.name)}</option>`).join("")}</select>`
+          : `<input class="txt" data-f="${side}Name" value="${esc(F[side + "Name"])}" placeholder="임시 팀명">`}
+        <span class="chip sal">급여 ${info.sal}${info.sal > capOf(side) ? " ⚠" : ""}</span>
+      </div>
+      <div class="slots">${slots}</div>
+      <div class="mf-sub">${isLeague ? "로스터" : "리그 참가 선수 전체"} — 눌러서 라인업에 추가</div>
+      <div class="pickzone" style="max-height:110px; overflow-y:auto">${pool.sort(sortP).filter(p => !F[side + "Picks"].has(p.id)).map(p => `
+        <button class="pickp" type="button" data-mp="${side}:${p.id}" style="--sc:${color}">
+          <i>${p.tier}</i>${esc(p.name)}</button>`).join("") || '<span class="hint">선수 없음</span>'}</div>
+      <div class="mf-sub">사용 스킬 <b>${F[side + "Skills"].size}</b> — ${isLeague ? "소유 스킬만" : "아마/프로: 자유 사용"}</div>
+      <div class="pickzone skills">${skillZone(side)}</div>
+    </div>`;
+  };
+  const both = R.n === 4 && B.n === 4;
+  const mdiff = Math.abs(R.mmr - B.mmr);
+  const invalid = !both || (isLeague && F.red === F.blue) || !F.result;
+  $("ops-form").innerHTML = `
+    <div class="mf-top">
+      <h3>NEW MATCH · 경기 입력</h3>
+      <input class="txt" type="date" data-f="date" value="${F.date}" style="width:130px">
+      <label class="mini-inp">주차 <input type="number" data-f="week" value="${F.week}" min="1"></label>
+      <select class="txt" data-f="type">${["리그", "아마추어", "프로"].map(t => `<option ${F.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <label class="mini-inp">급여 상한 <input type="number" id="sal-cap" value="${c.salaryCap}" min="0"></label>
+    </div>
+    <div class="mf-grid">
+      ${sideHTML("red", "#ff8f9e")}
+      <div class="mf-center">
+        <div class="vs">VS</div>
+        <div class="sum">${both ? `${R.mmr} <span>vs</span> ${B.mmr}` : `<span>선수 선택</span><br>${R.n}/4 · ${B.n}/4`}</div>
+        ${both && mdiff >= c.underdogGap ? `<span class="chip sal">⚡ 언더독 · ${esc(R.mmr < B.mmr ? sideName("red") : sideName("blue"))}</span>` : ""}
+        <div class="seg vert">
+          <button type="button" data-res="red" class="${F.result === "red" ? "on" : ""}">${esc(sideName("red"))} 승</button>
+          <button type="button" data-res="draw" class="${F.result === "draw" ? "on" : ""}">무승부</button>
+          <button type="button" data-res="blue" class="${F.result === "blue" ? "on" : ""}">${esc(sideName("blue"))} 승</button>
+        </div>
+        <button class="btn primary" type="button" id="save-match" ${invalid ? "disabled" : ""}>🔖 경기 저장</button>
+      </div>
+      ${sideHTML("blue", "#8fc3ff")}
+    </div>
+    <div class="warn-box">${warns.join("")}</div>`;
+
+  $("ops-form").querySelectorAll("[data-f]").forEach(el => el.onchange = () => {
+    const k = el.dataset.f;
+    if (k === "red" || k === "blue") { F[k] = +el.value; F[k + "Picks"] = new Set(); F[k + "Skills"] = new Set(); }
+    else if (k === "week") F.week = Math.max(1, +el.value || 1);
+    else if (k === "date") { F.date = el.value; F.week = E.weekOf(L, F.date); }
+    else if (k === "type") {
+      F.type = el.value;
+      F.redPicks = new Set(); F.bluePicks = new Set(); F.redSkills = new Set(); F.blueSkills = new Set();
+    }
+    else F[k] = el.value;
+    renderOps();
+  });
+  $("sal-cap").onchange = () => {
+    if (!editable()) return renderOps();
+    L.config.salaryCap = Math.max(0, +$("sal-cap").value || 0); commit(); };
+  $("ops-form").querySelectorAll("[data-mp]").forEach(b => b.onclick = () => {
+    const [side, id] = b.dataset.mp.split(":");
+    const set = F[side + "Picks"];
+    if (set.has(+id)) set.delete(+id);
+    else if (set.size < 4) set.add(+id);
+    renderOps();
+  });
+  $("ops-form").querySelectorAll("[data-msk]").forEach(b => b.onclick = () => {
+    const i = b.dataset.msk.indexOf(":");
+    const side = b.dataset.msk.slice(0, i), name = b.dataset.msk.slice(i + 1);
+    const set = F[side + "Skills"];
+    set.has(name) ? set.delete(name) : set.add(name);
+    renderOps();
+  });
+  $("ops-form").querySelectorAll("[data-res]").forEach(b => b.onclick = () => { F.result = b.dataset.res; renderOps(); });
+  const sm = $("save-match");
+  if (sm) sm.onclick = () => {
+    if (!editable()) return;
+    if (invalid) return;
+    L.matches.push({
+      id: L.seq.match++, date: F.date, week: F.week, type: F.type,
+      red: { team: isLeague ? F.red : null, name: isLeague ? "" : F.redName, players: [...F.redPicks], skills: [...F.redSkills] },
+      blue: { team: isLeague ? F.blue : null, name: isLeague ? "" : F.blueName, players: [...F.bluePicks], skills: [...F.blueSkills] },
+      result: F.result,
+    });
+    F.redPicks = new Set(); F.bluePicks = new Set();
+    F.redSkills = new Set(); F.blueSkills = new Set(); F.result = null;
+    toast("경기 저장 — MMR 즉시 반영됨");
+    commit();
+  };
+
+  // 팀 순위
+  const stnd = E.standings(L, calc);
+  $("standings").innerHTML = stnd.map((s, i) => `
+    <div class="st-row" style="--tc:${s.t.color}">
+      <span style="color:var(--dim); font-weight:800; font-size:11px">${i + 1}</span>
+      <span class="tag"></span><span class="nm">${esc(s.t.name)}</span>
+      <span class="wdl">${s.w}승 ${s.d}무 ${s.l}패</span>
+      <span class="pts">${s.pts}점</span>
+    </div>`).join("") || '<p class="tier-note">팀 없음</p>';
+
+  // 수동 보정 선수 목록
+  $("adj-player").innerHTML = `<option value="">선수 선택</option>` +
+    activePlayers().filter(p => p.tier).sort(sortP).map(p => `<option value="${p.id}">[${p.tier}] ${esc(p.name)}</option>`).join("");
+
+  // 경기 로그
+  $("match-list").innerHTML = L.matches.slice().reverse().map(m => {
+    const mc = calc.matchCalc[m.id];
+    const rn = m.red.team != null ? teamName(m.red.team) : (m.red.name || "레드");
+    const bn = m.blue.team != null ? teamName(m.blue.team) : (m.blue.name || "블루");
+    const sk = [...(m.red.skills || []), ...(m.blue.skills || [])];
+    return `
+    <div class="m-row">
+      <span class="chip">${m.type} · W${m.week} · ${m.date || ""}</span>
+      <span class="vs2">${esc(rn)} vs ${esc(bn)}</span>
+      <span class="res ${m.result === "red" ? "rw" : m.result === "blue" ? "bw" : "dr"}">${m.result === "red" ? "레드 승" : m.result === "blue" ? "블루 승" : "무"}</span>
+      ${mc?.und ? '<span class="und">⚡언더독</span>' : ""}
+      ${sk.length ? `<span title="${esc(sk.join(", "))}">${sk.map(n => sic(n)).join("")}</span>` : ""}
+      <button type="button" data-delmatch="${m.id}" title="삭제 시 전체 MMR 재계산">✕ 삭제</button>
+    </div>`;
+  }).join("") || '<span class="tier-note">아직 경기가 없습니다</span>';
+  $("match-list").querySelectorAll("[data-delmatch]").forEach(b => b.onclick = () => {
+    if (!editable()) return;
+    if (!confirm("이 경기를 삭제하면 전체 MMR이 재계산됩니다. 계속할까요?")) return;
+    const i = L.matches.findIndex(m => m.id === +b.dataset.delmatch);
+    if (i >= 0) { L.matches.splice(i, 1); commit(); toast("삭제 — 전체 MMR 재계산 완료"); }
+  });
+  renderLedger();
+}
+$("adj-apply").onclick = () => {
+  if (!editable()) return;
+  const pid = +$("adj-player").value, delta = Math.trunc(+$("adj-delta").value || 0);
+  const reason = $("adj-reason").value.trim();
+  if (!pid || !delta) return toast("선수와 변동량을 입력하세요", true);
+  if (!reason) return toast("사유는 필수입니다", true);
+  L.adjusts.push({ id: L.seq.adjust++, playerId: pid, delta, reason, at: today() });
+  logLedger("adjust", `${P(pid).name} MMR ${delta > 0 ? "+" : ""}${delta} — ${reason}`);
+  $("adj-delta").value = ""; $("adj-reason").value = "";
+  toast("보정 적용 — 재계산 완료");
+  commit();
+};
+$("run-weekly").onclick = () => { $("weekly-msg").textContent = "월요일 배치는 M2에서 자동화됩니다"; };
+
+/* ══════════ 드래그 앤 드롭 (공용) ══════════ */
+document.addEventListener("dragstart", e => {
+  const sk = e.target.closest("[data-skill]");
+  if (sk) {
+    e.dataTransfer.setData("text/plain", "s:" + sk.dataset.skill);
+    requestAnimationFrame(() => sk.classList.add("ghost"));
+    return;
+  }
+  const el = e.target.closest("[data-id]");
+  if (!el) return;
+  e.dataTransfer.setData("text/plain", el.dataset.id);
+  requestAnimationFrame(() => el.classList.add("ghost"));
+});
+document.addEventListener("dragend", e => {
+  const el = e.target.closest("[data-id]") || e.target.closest("[data-skill]");
+  if (el) el.classList.remove("ghost");
+  document.querySelectorAll(".drag-over").forEach(x => x.classList.remove("drag-over"));
+});
+document.addEventListener("dragover", e => {
+  if (e.target.closest(".team,.trow,.rcol") || e.target.closest("aside")) e.preventDefault();
+});
+document.addEventListener("dragenter", e => {
+  const z = e.target.closest(".team,.trow,.rcol");
+  if (z) z.classList.add("drag-over");
+});
+document.addEventListener("dragleave", e => {
+  const z = e.target.closest(".team,.trow,.rcol");
+  if (z && !z.contains(e.relatedTarget)) z.classList.remove("drag-over");
+});
+document.addEventListener("drop", e => {
+  const data = e.dataTransfer.getData("text/plain");
+  e.preventDefault();
+  if (data.startsWith("s:")) {
+    if (!editable()) return;
+    const row = e.target.closest(".trow");
+    if (row && row.dataset.stier) { L.skillTier[data.slice(2)] = row.dataset.stier; selectedSkill = null; commit(); }
+    return;
+  }
+  const id = +data; if (!id) return;
+  const p = P(id); if (!p) return;
+  if (!editable()) return;
+  const rcol = e.target.closest(".rcol");
+  const trow = e.target.closest(".trow[data-tier]");
+  const team = e.target.closest(".team");
+  const as = e.target.closest("aside");
+  if (rcol && !D().started) { p.round = +rcol.dataset.round; }
+  else if (trow) { placeTier(p, trow.dataset.tier); return; }
+  else if (team) movePlayer(p, +team.dataset.team);
+  else if (as) {
+    if (as.closest("#view-tier")) { movePlayer(p, null, true); p.tier = null; p.initialTier = null; p.round = 0; }
+    else movePlayer(p, null);
+  }
+  selected = null;
+  commit();
+});
+
+/* ══════════ 클릭 공통 ══════════ */
+document.addEventListener("click", e => {
+  const go = e.target.closest("[data-goto]");
+  if (go) { showView(go.dataset.goto); return; }
+  const reg = e.target.closest("[data-register]");
+  if (reg) { registerUser(+reg.dataset.register); return; }
+  const du = e.target.closest("[data-deluser]");
+  if (du) { deleteUser(+du.dataset.deluser); return; }
+  const unreg = e.target.closest("[data-unreg]");
+  if (unreg) {
+    if (!editable()) return;
+    const p = P(+unreg.dataset.unreg);
+    if (canRemove(p)) L.players.splice(L.players.indexOf(p), 1);
+    else p.active = p.active === false ? true : false;
+    commit(); return;
+  }
+  const skc = e.target.closest("[data-skill]");
+  if (skc) { selectedSkill = selectedSkill === skc.dataset.skill ? null : skc.dataset.skill; renderSkill(); return; }
+  const srow = e.target.closest(".trow[data-stier]");
+  if (srow && selectedSkill && !e.target.closest("input")) {
+    if (!editable()) return;
+    L.skillTier[selectedSkill] = srow.dataset.stier; selectedSkill = null; commit(); return;
+  }
+  const sr = e.target.closest("[data-steam]");
+  if (sr) {
+    if (!editable()) return;
+    const t = T(+sr.dataset.steam);
+    t.skills = t.skills.filter(n => n !== sr.dataset.sname);
+    logLedger("skill", `${t.name} — ${sr.dataset.sname} 소유 해제 (환불 없음)`);
+    commit(); return;
+  }
+  const dt = e.target.closest("[data-delteam]");
+  if (dt) {
+    if (!confirm("팀을 삭제/비활성합니다. 소속 선수는 미배정으로 돌아갑니다. 계속?")) return;
+    delTeam(+dt.dataset.delteam); return;
+  }
+  const un = e.target.closest("[data-unplace]");
+  if (un) {
+    if (!editable()) return;
+    const p = P(+un.dataset.unplace);
+    movePlayer(p, null, true); p.tier = null; p.initialTier = null; p.round = 0;
+    commit(); return;
+  }
+  const rm = e.target.closest("[data-remove]");
+  if (rm) { if (!editable()) return; movePlayer(P(+rm.dataset.remove), null); commit(); return; }
+  const card = e.target.closest(".card");
+  if (card) { selected = selected === +card.dataset.id ? null : +card.dataset.id; renderTier(); renderBoard(); return; }
+  const trow = e.target.closest(".trow[data-tier]");
+  if (trow && selected && !e.target.closest("input")) { placeTier(P(selected), trow.dataset.tier); selected = null; return; }
+  const t = e.target.closest(".team");
+  if (t && selected && !e.target.closest("input,button,select")) {
+    if (!editable()) return;
+    movePlayer(P(selected), +t.dataset.team); selected = null; commit();
+  }
+});
+
+/* ══════════ 뷰 전환 ══════════ */
+const TIPS = {
+  home:  "💡 리그 카드에서 이름·기간을 바로 수정 — 기간은 진행 중에도 변경 가능, 주차 자동 재산출",
+  users: "💡 유저는 이름만으로 추가 · [리그에 등록]하면 티어 배치 화면에 나타납니다 · 여러 줄 붙여넣기로 일괄 등록",
+  tier:  "💡 티어 = 스타트 MMR·급여 · 정원 합계를 실제 인원에 맞추세요 (순위 재배치 구간)",
+  skill: "💡 스킬 티어·소유 상한·구매 가격을 리그별로 설정 · public/icons/스킬명.png를 넣으면 게임 아이콘 표시",
+  board: "💡 드래그 또는 선수 클릭 → 팀 칸 클릭 · 코인 수정/스킬 구매/트레이드/방출 전부 기록됩니다",
+  draft: "💡 시작 전에 코인·획득 상한·라운드 풀 설정 · 실제 호가는 현장에서, 여기엔 낙찰 팀과 코인만 기록",
+  ops:   "💡 경기 저장 = MMR 즉시 반영 · 삭제 = 전체 재계산 · 아마추어/프로는 임시 팀명 + 스킬 자유",
+};
+function showView(which) {
+  curView = which;
+  for (const v of ["home", "users", "tier", "skill", "board", "draft", "ops"])
+    $("view-" + v).hidden = v !== which;
+  document.querySelectorAll("header .step").forEach(b => b.classList.toggle("now", b.dataset.goto === which));
+  $("foot-tip").innerHTML = TIPS[which] || "";
+  renderAll();
+}
+function renderAll() {
+  if (!L) { renderHome(); return; }
+  if (curView === "home") renderHome();
+  if (curView === "users") renderUsers();
+  if (curView === "tier") renderTier();
+  if (curView === "skill") renderSkill();
+  if (curView === "board") renderBoard();
+  if (curView === "draft") renderDraft();
+  if (curView === "ops") renderOps();
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+/* 초축 리그 — 다크 e스포츠 디자인 시스템 (PRD §8 디자인 가이드) */
+:root{
+  color-scheme:dark;
+  --bg:#0B0F19; --surface:#141B2D; --raised:#1B2438; --hairline:#263050;
+  --ink:#E9EDF7; --muted:#8C96AE; --faint:#5C6680;
+  --up:#35C98A; --down:#F0716B; --accent:#3987e5; --accent2:#c98500;
+  --tier-s:#F2C14E; --tier-a:#A78BFA; --tier-b:#6AA3F5; --tier-c:#9AA5BA;
+  --radius:10px;
+  font-family:"Pretendard Variable",Pretendard,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.5;font-size:15px}
+a{color:inherit;text-decoration:none}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* nav */
+header{position:sticky;top:0;z-index:10;background:rgba(11,15,25,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--hairline)}
+.nav{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:22px;padding:0 20px;height:56px;overflow-x:auto}
+.logo{font-weight:900;font-size:17px;letter-spacing:-.02em;display:flex;align-items:center;gap:9px;white-space:nowrap}
+.logo .dot{width:10px;height:10px;border-radius:2px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.nav-links{display:flex;gap:18px;font-size:14px;color:var(--muted);font-weight:600;white-space:nowrap}
+.nav-links a{padding:17px 0;position:relative}
+.nav-links a.on{color:var(--ink)}
+.nav-links a.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent)}
+.nav .admin-link{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--muted);border:1px solid var(--hairline);border-radius:7px;padding:6px 12px;white-space:nowrap}
+
+.wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px}
+.season{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px;margin:6px 0 22px}
+.season h1{font-size:24px;font-weight:900;letter-spacing:-.02em;margin:0}
+.season .meta{font-size:13px;color:var(--muted)}
+.season .live{font-size:11.5px;font-weight:800;letter-spacing:.08em;color:var(--up);border:1px solid rgba(53,201,138,.35);border-radius:20px;padding:3px 10px}
+
+.card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius);overflow:hidden;margin-bottom:20px}
+.card-h{display:flex;align-items:baseline;gap:10px;padding:14px 18px;border-bottom:1px solid var(--hairline);flex-wrap:wrap}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+.card-h h2{font-size:16px;font-weight:800;margin:0}
+.card-h .sub{margin-left:auto;font-size:12px;color:var(--muted)}
+
+/* tier badge */
+.tb{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:21px;padding:0 7px;border-radius:5px;font-size:11.5px;font-weight:900;background:rgba(255,255,255,.06)}
+.tb.t-s{color:var(--tier-s);border:1px solid rgba(242,193,78,.45)}
+.tb.t-a{color:var(--tier-a);border:1px solid rgba(167,139,250,.45)}
+.tb.t-b{color:var(--tier-b);border:1px solid rgba(106,163,245,.45)}
+.tb.t-c{color:var(--tier-c);border:1px solid rgba(154,165,186,.45)}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:left;padding:9px 12px;border-bottom:1px solid var(--hairline)}
+.tbl td{padding:9px 12px;border-bottom:1px solid rgba(38,48,80,.5)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover{background:rgba(57,135,229,.07)}
+.tbl .r{text-align:right}
+.tbl .rank{width:34px;color:var(--muted);font-weight:800}
+.tbl .name{font-weight:700}
+.tbl a.name:hover{color:var(--accent)}
+.tbl .dim{color:var(--muted);font-size:13px}
+.tbl .mmr{font-weight:800}
+.d-up{color:var(--up);font-weight:700}
+.d-dn{color:var(--down);font-weight:700}
+.d-zero{color:var(--faint);font-weight:700}
+tr.cut td{padding:0;border-bottom:0}
+.cutline{display:flex;align-items:center;gap:10px;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--tier-s)}
+.cutline::before,.cutline::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(242,193,78,.55),transparent)}
+@media(max-width:560px){.hide-m{display:none}}
+
+/* chips */
+.chip{font-size:10.5px;font-weight:800;letter-spacing:.06em;border-radius:5px;padding:2.5px 8px;white-space:nowrap}
+.chip.ud{color:var(--tier-s);border:1px solid rgba(242,193,78,.45)}
+.chip.pen{color:var(--down);border:1px solid rgba(240,113,107,.4)}
+.chip.type{color:var(--muted);border:1px solid var(--hairline)}
+
+/* match rows */
+.mrow{display:grid;grid-template-columns:92px 1fr auto;gap:14px;align-items:center;padding:13px 18px;border-bottom:1px solid rgba(38,48,80,.5)}
+.mrow:last-child{border-bottom:0}
+.mrow:hover{background:rgba(57,135,229,.06)}
+.mmeta{font-size:12px;color:var(--muted);line-height:1.4}
+.mmeta b{display:block;color:var(--ink);font-size:12.5px}
+.mscore{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px;flex-wrap:wrap}
+.mscore .sc{font-size:17px;font-weight:900;min-width:52px;text-align:center;background:var(--raised);border-radius:7px;padding:3px 10px}
+.mscore .lose{color:var(--muted);font-weight:700}
+.mpts{text-align:right;font-size:12.5px;font-weight:800}
+.mpts span{display:block}
+@media(max-width:560px){.mrow{grid-template-columns:1fr auto}.mmeta{grid-column:1/-1}}
+
+/* player page */
+.grid2{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.pc-top{display:flex;align-items:center;gap:12px;padding:16px 18px}
+.pc-ava{width:44px;height:44px;border-radius:9px;background:linear-gradient(135deg,#20304e,#101827);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:var(--tier-b);flex:none}
+.pc-name{font-size:18px;font-weight:900}
+.pc-team{font-size:12.5px;color:var(--muted)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:1px;background:var(--hairline);border-top:1px solid var(--hairline)}
+.stat-cell{background:var(--surface);padding:10px 14px}
+.stat-cell .k{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
+.stat-cell .v{font-size:19px;font-weight:900}
+.stat-cell .v small{font-size:12px;font-weight:700;margin-left:3px}
+.radar-wrap{padding:8px 10px 2px;display:flex;justify-content:center}
+.chart-pad{padding:12px 18px 16px}
+.chart-pad .k{font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-bottom:6px}
+
+/* forms / admin */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px 18px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--faint);text-transform:uppercase}
+input,select{background:var(--raised);border:1px solid var(--hairline);color:var(--ink);border-radius:7px;padding:8px 10px;font:inherit;font-size:14px;min-width:0}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+input:focus,select:focus{border-color:var(--accent);outline:none}
+.btn{background:var(--accent);border:none;color:#fff;font-weight:800;border-radius:7px;padding:9px 18px;font-size:14px}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;border:1px solid var(--hairline);color:var(--muted)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--faint)}
+.btn.danger{background:transparent;border:1px solid rgba(240,113,107,.4);color:var(--down)}
+.btn.sm{padding:5px 12px;font-size:12.5px}
+.bar{display:flex;gap:10px;align-items:center;padding:14px 18px;border-top:1px solid var(--hairline);flex-wrap:wrap}
+.tabs{display:flex;gap:4px;padding:12px 18px 0;flex-wrap:wrap}
+.tabs button{background:transparent;border:1px solid var(--hairline);color:var(--muted);font-weight:700;font-size:13px;border-radius:7px 7px 0 0;border-bottom:none;padding:8px 16px}
+.tabs button.on{background:var(--surface);color:var(--ink);border-color:var(--accent)}
+.warn-box{margin:0 18px 14px;padding:10px 14px;border:1px solid rgba(242,193,78,.4);border-radius:8px;color:var(--tier-s);font-size:13px;line-height:1.7}
+.err-box{margin:0 18px 14px;padding:10px 14px;border:1px solid rgba(240,113,107,.4);border-radius:8px;color:var(--down);font-size:13px}
+.ok-box{margin:0 18px 14px;padding:10px 14px;border:1px solid rgba(53,201,138,.4);border-radius:8px;color:var(--up);font-size:13px}
+
+/* match input side panels */
+.side-panel{border:1px solid var(--hairline);border-radius:8px;margin:0 18px 14px;overflow:hidden}
+.side-panel h3{margin:0;padding:10px 14px;font-size:13px;font-weight:800;background:var(--raised);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.side-panel h3 .sal{margin-left:auto;font-size:12px;font-weight:700;color:var(--muted)}
+.side-panel h3 .sal.over{color:var(--down)}
+.prow{display:grid;grid-template-columns:minmax(110px,1.4fr) repeat(8,minmax(44px,1fr)) 44px;gap:6px;padding:8px 14px;border-top:1px solid rgba(38,48,80,.5);align-items:center}
+.prow input{padding:6px 6px;font-size:13px;text-align:center}
+.prow select{padding:6px 6px;font-size:13px}
+.prow-head{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--faint);text-transform:uppercase;text-align:center}
+.prow-head:first-child{text-align:left}
+.scroll-x{overflow-x:auto}
+.scroll-x .prow{min-width:760px}
+
+/* roster board */
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;padding:16px 18px}
+.rteam{border:1px solid var(--hairline);border-radius:8px;overflow:hidden}
+.rteam h3{margin:0;padding:9px 13px;font-size:13.5px;font-weight:800;background:var(--raised);display:flex;justify-content:space-between;align-items:center}
+.rteam h3 .cnt{font-size:11.5px;color:var(--muted);font-weight:700}
+.rteam h3 .cnt.bad{color:var(--down)}
+.rteam ul{list-style:none;margin:0;padding:6px 0}
+.rteam li{display:flex;align-items:center;gap:8px;padding:5px 13px;font-size:13.5px}
+.rteam li .nm{font-weight:600;flex:1}
+.rteam li select{padding:3px 5px;font-size:12px}
+.rteam .rmeta{padding:6px 13px 0;font-size:12px;color:var(--muted)}
+.rteam .rstaff{display:flex;gap:6px;padding:9px 13px;border-top:1px solid var(--hairline);background:var(--raised)}
+.rteam .rstaff input{flex:1;min-width:0;padding:4px 7px;font-size:12px}
+.rteam .rstaff .btn{white-space:nowrap}
+footer{max-width:1080px;margin:0 auto;padding:18px 20px;color:var(--faint);font-size:12px}
+.empty{padding:28px 18px;color:var(--faint);text-align:center;font-size:13.5px}
