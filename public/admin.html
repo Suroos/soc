@@ -757,6 +757,11 @@
                 <button class="btn sm" type="button" id="adj-apply">적용</button>
               </div>
             </div>
+            <div class="ops-card" id="loan-card">
+              <h3>LOAN · 임대 정산</h3>
+              <p class="tier-note" style="margin:0">임대 보낸 팀은 경기 1회당 벤/리로드 게이지 1개 (기획안 5-2·6-1)</p>
+              <div id="loan-list"></div>
+            </div>
             <div class="ops-card">
               <h3>WEEKLY UPDATE · 주간 갱신</h3>
               <p class="tier-note" style="margin:0">MMR 순위 기반 티어 재배치 · 휴면 강등 · 승격 보상 — <b>M2에서 자동화 예정</b></p>
@@ -1740,19 +1745,14 @@ function nextRound() {
 }
 
 /* ══════════ 경기 관리 ══════════ */
+/* 경기 입력은 출전 4:4 + 결과만 받는다 — 사용 스킬 기록은 입력 부담이 커서 제외(2026-07-25).
+   팀 스킬 보유/구매와 공개 표시는 그대로 유지. */
 const F = { date: today(), week: 1, type: "리그", red: null, blue: null,
-  redName: "", blueName: "", redPicks: new Set(), bluePicks: new Set(),
-  redSkills: new Set(), blueSkills: new Set(), result: null };
+  redName: "", blueName: "", redPicks: new Set(), bluePicks: new Set(), result: null };
 
-function usedToday(side) {
-  const tid = F[side]; const used = new Set();
-  if (F.type !== "리그" || !tid) return used;
-  for (const m of L.matches) {
-    if (m.date !== F.date) continue;
-    for (const s of ["red", "blue"]) if (m[s].team === tid) (m[s].skills || []).forEach(n => used.add(n));
-  }
-  return used;
-}
+/* 임대 판정 (기획안 6-1) — 리그 경기에서 그 팀 소속이 아닌 선수는 임대 출전으로 본다 */
+const loanIds = side => F.type !== "리그" ? []
+  : [...F[side + "Picks"]].filter(id => P(id) && P(id).team !== F[side]);
 function renderOps() {
   if (!L) return;
   const c = L.config;
@@ -1774,26 +1774,14 @@ function renderOps() {
   };
   const R = pickInfo("red"), B = pickInfo("blue");
   const capOf = side => c.salaryCap + (isLeague ? (T(F[side])?.capBonus || 0) : 0);
-  const skillZone = side => {
-    const sel = F[side + "Skills"];
-    if (!isLeague) {   // 아마추어/프로: 스킬 자유 사용
-      return Object.keys(L.skillTier).sort((a, b) => a.localeCompare(b, "ko")).map(n => `
-        <button class="pickp${sel.has(n) ? " on" : ""}" type="button" data-msk="${side}:${esc(n)}" style="--sc:var(--accent)">
-          ${sic(n)} ${esc(n)}</button>`).join("");
-    }
-    const t = T(F[side]);
-    if (!t) return '<span class="hint">팀을 선택하세요</span>';
-    const used = usedToday(side);
-    return t.skills.map(n => `
-      <button class="pickp${sel.has(n) ? " on" : ""}" type="button" data-msk="${side}:${esc(n)}" style="--sc:${t.color}"
-        ${used.has(n) ? 'title="오늘 이미 사용 — 피어리스룰 경고"' : ""}>
-        ${sic(n)} ${esc(n)}${used.has(n) ? " ⚠" : ""}
-      </button>`).join("") || '<span class="hint">소유 스킬 없음 — 팀 편성에서 등록/구매</span>';
-  };
   const warns = [];
-  if (isLeague && feat("skill")) for (const side of ["red", "blue"]) {
-    const dup = [...F[side + "Skills"]].filter(n => usedToday(side).has(n));
-    if (dup.length) warns.push(`<span class="w">⚠ 피어리스룰: ${esc(teamName(F[side]))} — ${dup.join(", ")} 오늘 이미 사용</span>`);
+  for (const side of ["red", "blue"]) {
+    const loan = loanIds(side);
+    if (!loan.length) continue;
+    warns.push(`<span class="i">🔄 ${esc(sideName(side))} 임대 ${loan.length}명: ${loan.map(id => esc(P(id).name) + `(${esc(teamName(P(id).team))})`).join(", ")} — MMR·전적 미반영</span>`);
+    // 기획안 6-1: 본인팀에 뛸 선수가 있으면 임대 선수를 쓸 수 없다
+    const own = activePlayers().filter(p => p.team === F[side] && p.tier).length;
+    if (own >= 4) warns.push(`<span class="w">⚠ ${esc(sideName(side))}는 자체 가용 ${own}명 — 뛸 선수가 있으면 임대 불가 (기획안 6-1)</span>`);
   }
   if (R.n === 4 && B.n === 4) {
     const diff = Math.abs(R.mmr - B.mmr);
@@ -1817,13 +1805,15 @@ function renderOps() {
       const id = picks[i];
       if (id === undefined) return `<div class="slot empty">선수 ${i + 1}</div>`;
       const p = P(id);
-      return `<div class="slot" style="--tc:${TIER_COLOR[p.tier]}">
-        ${badge(p.tier)}<b>${esc(p.name)}</b>
+      const isLoan = isLeague && p.team !== F[side];
+      return `<div class="slot" style="--tc:${TIER_COLOR[p.tier]}"${isLoan ? ` title="임대 — ${esc(teamName(p.team))} 소속, MMR·전적 미반영"` : ""}>
+        ${badge(p.tier)}<b>${esc(p.name)}</b>${isLoan ? '<small style="color:var(--gold)">🔄</small>' : ""}
         <button type="button" data-mp="${side}:${p.id}">✕</button></div>`;
     }).join("");
     const other = side === "red" ? "blue" : "red";
+    // 리그: 자기 팀 + 타팀 소속(임대 후보). 무소속은 용병 불가라 제외 (기획안 6-1)
     const pool = isLeague
-      ? activePlayers().filter(p => p.team === F[side] && p.tier)
+      ? activePlayers().filter(p => p.tier && p.team != null && !F[other + "Picks"].has(p.id))
       : activePlayers().filter(p => p.tier && !F[other + "Picks"].has(p.id));
     const color = isLeague ? (T(F[side])?.color || "#888") : (side === "red" ? "#ff4d6a" : "#5aa2ff");
     return `
@@ -1836,12 +1826,15 @@ function renderOps() {
         <span class="chip sal">급여 ${info.sal}${info.sal > capOf(side) ? " ⚠" : ""}</span>
       </div>
       <div class="slots">${slots}</div>
-      <div class="mf-sub">${isLeague ? "로스터" : "리그 참가 선수 전체"} — 눌러서 라인업에 추가</div>
-      <div class="pickzone" style="max-height:110px; overflow-y:auto">${pool.sort(sortP).filter(p => !F[side + "Picks"].has(p.id)).map(p => `
-        <button class="pickp" type="button" data-mp="${side}:${p.id}" style="--sc:${color}">
-          <i>${p.tier}</i>${esc(p.name)}</button>`).join("") || '<span class="hint">선수 없음</span>'}</div>
-      ${feat("skill") ? `<div class="mf-sub">사용 스킬 <b>${F[side + "Skills"].size}</b> — ${isLeague ? "소유 스킬만" : "아마/프로: 자유 사용"}</div>
-      <div class="pickzone skills">${skillZone(side)}</div>` : ""}
+      <div class="mf-sub">${isLeague ? "로스터 + 🔄 임대 가능" : "리그 참가 선수 전체"} — 눌러서 라인업에 추가</div>
+      <div class="pickzone" style="max-height:110px; overflow-y:auto">${pool
+        .filter(p => !F[side + "Picks"].has(p.id))
+        .sort((a, b) => (isLeague ? (a.team === F[side] ? 0 : 1) - (b.team === F[side] ? 0 : 1) : 0) || sortP(a, b))
+        .map(p => {
+          const isLoan = isLeague && p.team !== F[side];
+          return `<button class="pickp" type="button" data-mp="${side}:${p.id}" style="--sc:${isLoan ? "var(--gold)" : color}"${isLoan ? ` title="임대 — ${esc(teamName(p.team))} 소속"` : ""}>
+            <i>${p.tier}</i>${esc(p.name)}${isLoan ? " 🔄" : ""}</button>`;
+        }).join("") || '<span class="hint">선수 없음</span>'}</div>
     </div>`;
   };
   const both = R.n === 4 && B.n === 4;
@@ -1877,12 +1870,12 @@ function renderOps() {
 
   $("ops-form").querySelectorAll("[data-f]").forEach(el => el.onchange = () => {
     const k = el.dataset.f;
-    if (k === "red" || k === "blue") { F[k] = +el.value; F[k + "Picks"] = new Set(); F[k + "Skills"] = new Set(); }
+    if (k === "red" || k === "blue") { F[k] = +el.value; F[k + "Picks"] = new Set(); }
     else if (k === "week") F.week = Math.max(1, +el.value || 1);
     else if (k === "date") { F.date = el.value; F.week = E.weekOf(L, F.date); }
     else if (k === "type") {
       F.type = el.value;
-      F.redPicks = new Set(); F.bluePicks = new Set(); F.redSkills = new Set(); F.blueSkills = new Set();
+      F.redPicks = new Set(); F.bluePicks = new Set();
     }
     else F[k] = el.value;
     renderOps();
@@ -1905,13 +1898,6 @@ function renderOps() {
     else if (set.size < 4) set.add(+id);
     renderOps();
   });
-  $("ops-form").querySelectorAll("[data-msk]").forEach(b => b.onclick = () => {
-    const i = b.dataset.msk.indexOf(":");
-    const side = b.dataset.msk.slice(0, i), name = b.dataset.msk.slice(i + 1);
-    const set = F[side + "Skills"];
-    set.has(name) ? set.delete(name) : set.add(name);
-    renderOps();
-  });
   $("ops-form").querySelectorAll("[data-res]").forEach(b => b.onclick = () => { F.result = b.dataset.res; renderOps(); });
   const sm = $("save-match");
   if (sm) sm.onclick = () => {
@@ -1919,12 +1905,11 @@ function renderOps() {
     if (invalid) return;
     L.matches.push({
       id: L.seq.match++, date: F.date, week: F.week, type: F.type,
-      red: { team: isLeague ? F.red : null, name: isLeague ? "" : F.redName, players: [...F.redPicks], skills: [...F.redSkills] },
-      blue: { team: isLeague ? F.blue : null, name: isLeague ? "" : F.blueName, players: [...F.bluePicks], skills: [...F.blueSkills] },
+      red: { team: isLeague ? F.red : null, name: isLeague ? "" : F.redName, players: [...F.redPicks], loan: loanIds("red") },
+      blue: { team: isLeague ? F.blue : null, name: isLeague ? "" : F.blueName, players: [...F.bluePicks], loan: loanIds("blue") },
       result: F.result,
     });
-    F.redPicks = new Set(); F.bluePicks = new Set();
-    F.redSkills = new Set(); F.blueSkills = new Set(); F.result = null;
+    F.redPicks = new Set(); F.bluePicks = new Set(); F.result = null;
     toast("경기 저장 — MMR 즉시 반영됨");
     commit();
   };
@@ -1948,13 +1933,15 @@ function renderOps() {
     const mc = calc.matchCalc[m.id];
     const rn = m.red.team != null ? teamName(m.red.team) : (m.red.name || "레드");
     const bn = m.blue.team != null ? teamName(m.blue.team) : (m.blue.name || "블루");
-    const sk = [...(m.red.skills || []), ...(m.blue.skills || [])];
+    const sk = [...(m.red.skills || []), ...(m.blue.skills || [])];   // 옛 경기 기록 호환 (스킬 입력은 폐지)
+    const ln = [...(m.red.loan || []), ...(m.blue.loan || [])];
     return `
     <div class="m-row">
       <span class="chip">${m.type} · W${m.week} · ${m.date || ""}</span>
       <span class="vs2">${esc(rn)} vs ${esc(bn)}</span>
       <span class="res ${m.result === "red" ? "rw" : m.result === "blue" ? "bw" : "dr"}">${m.result === "red" ? "레드 승" : m.result === "blue" ? "블루 승" : "무"}</span>
       ${mc?.und ? '<span class="und">⚡언더독</span>' : ""}
+      ${ln.length ? `<span class="chip" title="임대 출전 — MMR·전적 미반영: ${esc(ln.map(id => P(id)?.name ?? "?").join(", "))}">🔄 ${ln.length}</span>` : ""}
       ${sk.length ? `<span title="${esc(sk.join(", "))}">${sk.map(n => sic(n)).join("")}</span>` : ""}
       <button type="button" data-delmatch="${m.id}" title="삭제 시 전체 MMR 재계산">✕ 삭제</button>
     </div>`;
@@ -1966,6 +1953,44 @@ function renderOps() {
     if (i >= 0) { L.matches.splice(i, 1); commit(); toast("삭제 — 전체 MMR 재계산 완료"); }
   });
   renderLedger();
+  renderLoan();
+}
+
+/* ── 임대 정산 (기획안 5-2·6-1: 임대 보낸 팀에 경기 1회당 게이지 1개) ── */
+function loanStats() {
+  const sent = {}, paid = {};
+  for (const m of L.matches)
+    for (const s of ["red", "blue"])
+      for (const id of (m[s].loan || [])) {
+        const p = P(id);
+        if (p && p.team != null) sent[p.team] = (sent[p.team] || 0) + 1;   // 원 소속팀이 받는다
+      }
+  // 취소된 원장 항목은 원본·역기록 둘 다 canceled 라 자연히 상계된다
+  for (const l of L.ledger)
+    if (l.type === "gauge" && l.loanCount && !l.canceled) paid[l.teamId] = (paid[l.teamId] || 0) + l.loanCount;
+  return { sent, paid };
+}
+function renderLoan() {
+  const el = $("loan-list"); if (!el || !L) return;
+  $("loan-card").hidden = !feat("board") || !feat("skill");
+  const { sent, paid } = loanStats();
+  const rows = activeTeams().map(t => ({ t, n: sent[t.id] || 0, p: paid[t.id] || 0 })).filter(r => r.n > 0);
+  el.innerHTML = rows.map(r => `
+    <div class="f-row" style="margin-top:6px">
+      <span style="flex:1; font-size:12px">${esc(r.t.name)} — 임대 <b>${r.n}</b>회 · 지급 ${r.p}</span>
+      ${r.n > r.p
+        ? `<button class="btn sm" type="button" data-loanpay="${r.t.id}" data-n="${r.n - r.p}">🔋 +${r.n - r.p} 지급</button>`
+        : '<span class="chip">정산 완료</span>'}
+    </div>`).join("") || '<p class="tier-note" style="margin:6px 0 0">임대 출전 기록 없음</p>';
+  el.querySelectorAll("[data-loanpay]").forEach(b => b.onclick = () => {
+    if (!editable()) return;
+    const t = T(+b.dataset.loanpay), n = +b.dataset.n;
+    if (!t || !n) return;
+    t.gauge = (t.gauge || 0) + n;
+    logLedger("gauge", `${t.name} 임대 ${n}회 정산 — 게이지 +${n}`, { teamId: t.id, delta: n, loanCount: n });
+    toast(`${t.name} 게이지 +${n} 지급`);
+    commit();
+  });
 }
 $("adj-apply").onclick = () => {
   if (!editable()) return;

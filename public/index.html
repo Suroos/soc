@@ -390,8 +390,10 @@ function renderLog() {
     const rn = m.red.team != null ? teamName(m.red.team) : (m.red.name || "레드");
     const bn = m.blue.team != null ? teamName(m.blue.team) : (m.blue.name || "블루");
     const sk = [...(m.red.skills || []), ...(m.blue.skills || [])];
+    const loan = new Set([...(m.red.loan || []), ...(m.blue.loan || [])]);
     const chip = (id) => {
       const p = P(id); if (!p) return "";
+      if (loan.has(id)) return `<span class="mini" title="임대 출전 — MMR·전적 미반영">${esc(p.name)} <span class="d z">🔄</span></span>`;
       const d = mc.delta?.[id] ?? 0;
       return `<span class="mini">${esc(p.name)} <span class="d ${d > 0 ? "up" : d < 0 ? "dn" : "z"}">${d > 0 ? "+" + d : d || "0"}</span></span>`;
     };

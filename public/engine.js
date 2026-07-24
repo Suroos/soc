@@ -135,10 +135,13 @@
       const mc = { rs, bs, und, delta: {}, after: {} };
       for (const s of ["red", "blue"]) {
         const draw = m.result === "draw", win = m.result === s;
+        const loan = new Set(m[s].loan || []);   // 임대 출전 (기획안 6-1)
         let d = draw ? (c.draw || 0) : win ? c.win : -c.lose;
         if (und && !draw) d = (s === und) ? (win ? c.udWin : -c.udLose)
                                           : (win ? c.udStrongWin : -c.udStrongLose);
         for (const id of m[s].players) {
+          // 임대는 랭크 시스템 미적용 — MMR·전적 모두 건드리지 않는다 (출전 기록은 경기에 남음)
+          if (loan.has(id)) { mc.delta[id] = 0; mc.after[id] = mmr[id] ?? null; continue; }
           if (mmr[id] != null) mmr[id] += d;
           mc.delta[id] = d;
           mc.after[id] = mmr[id] ?? null;
