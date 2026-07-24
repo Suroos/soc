@@ -82,13 +82,14 @@
       tiers,                                   // 티어별 {mmr(스타트), sal, cap}
       skillTier: { ...SKILL_TIER_DEFAULT },    // 스킬명 → S/A/B/C (리그별)
       players: [],  // {id, userId, name, tier, initialTier, pos, team, price, round, promoCredited, active}
-      teams: [],    // {id, name, coach, managerId, color, coins, gauge, capBonus, skills:[], active}
+      teams: [],    // {id, name, coach, managerId, color, coins, gauge, salaryCap, promoCount, skills:[], active}
       draft: { started: false, done: false, round: 1, queue: [], poolR2: [], log: [] },
       matches: [],  // {id, date, week, type, red:{team,name,players,skills}, blue:{...}, result}
       adjusts: [],  // mmr_adjust: {id, playerId, delta, reason, at(date)} — 재계산 시 경기와 시간순 리플레이
-      ledger: [],   // 통합 거래 내역(coin/trade/roster/draft/skill) {id, type, at, text, undoOf?}
+      ledger: [],   // 통합 거래 내역(coin/gauge/trade/roster/draft/skill) {id, type, at, text, undoOf?}
+      approvals: [],// 자동 제안 처리 이력 {id, key, type, status:approved|rejected, reason, at} — 재제안 방지
       weekly: [],   // 주간 갱신 이력 (M2)
-      seq: { player: 1, team: 1, match: 1, adjust: 1, ledger: 1 },
+      seq: { player: 1, team: 1, match: 1, adjust: 1, ledger: 1, approval: 1 },
     };
   }
 
@@ -170,13 +171,14 @@
   }
 
   /* 팀 순위 — 리그 유형 경기만. 동률: 승점 → 다승 → 승자승 → 팀명 가나다 */
-  function standings(L, calc) {
+  function standings(L, calc, maxWeek) {
     const rows = L.teams.filter(t => t.active !== false)
       .map(t => ({ t, w: 0, d: 0, l: 0, pts: 0 }));
     const by = {}; rows.forEach(r => { by[r.t.id] = r; });
     const h2h = {};   // "승팀:패팀" → 승수
     for (const m of L.matches) {
       if (m.type !== "리그") continue;
+      if (maxWeek != null && (m.week || 1) > maxWeek) continue;   // 주간 보상 산정용 누적 순위
       const R = by[m.red.team], B = by[m.blue.team];
       if (!R || !B) continue;
       if (m.result === "draw") { R.d++; B.d++; }
@@ -195,8 +197,82 @@
     return rows;
   }
 
+  /* ══════════ 자동 제안 (관리자 승인/거절 대기함) ══════════
+   * 규칙상 자동으로 판정 가능한 것들을 감지해 제안으로 내놓는다. 시스템이 바로 반영하지 않고
+   * 관리자가 승인해야 적용되며, 거절하면 사유와 함께 기록에 남고 다시 뜨지 않는다.
+   * 판정이 애매한 규칙(휴면 등)도 관리자가 보고 거르면 되므로 이 구조로 흡수한다. */
+  const capOfTeam = (L, t) => t.salaryCap ?? (L.config.salaryCap + (t.capBonus || 0));
+
+  function proposals(L) {
+    const out = [];
+    const decided = new Set((L.approvals || []).map(a => a.key));
+    const c = L.config;
+    const teams = L.teams.filter(t => t.active !== false);
+    const P = id => L.players.find(p => p.id === id);
+    const add = o => { if (!decided.has(o.key)) out.push(o); };
+
+    /* ① 임대 정산 — 임대 보낸 팀에 경기 1회당 게이지 1개 (기획안 5-2·6-1) */
+    for (const m of L.matches)
+      for (const s of ["red", "blue"])
+        for (const id of (m[s].loan || [])) {
+          const p = P(id); if (!p || p.team == null) continue;
+          const t = L.teams.find(x => x.id === p.team); if (!t) continue;
+          add({ key: `loan:${m.id}:${id}`, type: "gauge", teamId: t.id,
+            title: `${t.name} · 임대 정산`,
+            detail: `${p.date || m.date || ""} ${p.name} 임대 출전 → 벤/리로드 게이지 +1`,
+            effect: { gauge: 1 } });
+        }
+
+    /* ② 승격 보상 — 최초 배치 티어보다 올라간 선수, 선수당 평생 1회 적립 (기획안 4-2) */
+    for (const p of L.players) {
+      if (p.active === false || !p.tier || !p.initialTier || p.promoCredited || p.team == null) continue;
+      if (TIER_ORDER.indexOf(p.tier) >= TIER_ORDER.indexOf(p.initialTier)) continue;
+      const t = L.teams.find(x => x.id === p.team); if (!t) continue;
+      const n = (t.promoCount || 0) + 1;
+      add({ key: `promo:${p.id}`, type: "promo", teamId: t.id, playerId: p.id,
+        title: `${t.name} · 승격 적립`,
+        detail: `${p.name} ${p.initialTier} → ${p.tier} 승격 · ${t.name} ${n}번째 적립` +
+          (n % 2 === 0 ? ` → 2명 채움, 급여 상한 +5` : ` (2명 채우면 +5)`),
+        effect: { promo: 1 } });
+    }
+
+    /* ③ 주간 순위 보상 — 끝난 주차마다 통합 순위로 게이지 (기획안 5-1: 1위 1개 ~ 4위 4개) */
+    const weeks = [...new Set(L.matches.filter(m => m.type === "리그").map(m => m.week || 1))].sort((a, b) => a - b);
+    const lastWeek = weeks[weeks.length - 1];
+    for (const w of weeks) {
+      if (w >= lastWeek) continue;                 // 진행 중인 마지막 주차는 아직 끝나지 않은 것으로 본다
+      standings(L, null, w).forEach((row, i) => {
+        add({ key: `weekly:${w}:${row.t.id}`, type: "gauge", teamId: row.t.id,
+          title: `${row.t.name} · ${w}주차 순위 보상`,
+          detail: `${w}주차까지 통합 ${i + 1}위 (승점 ${row.pts}) → 게이지 +${i + 1}`,
+          effect: { gauge: i + 1 } });
+      });
+    }
+
+    /* ④ 휴면 강등 — 구간 내 출전 0회면 -200p (기획안 4-2)
+     * 판정 시점: 1~3주차분은 4주차 경기가 생긴 뒤, 4~5주차분은 5주차를 넘어선 뒤 */
+    const played = {};   // playerId → Set(week)
+    for (const m of L.matches)
+      for (const s of ["red", "blue"])
+        for (const id of m[s].players) (played[id] = played[id] || new Set()).add(m.week || 1);
+    for (const [label, ws, after] of [["1~3주차", [1, 2, 3], 4], ["4~5주차", [4, 5], 6]]) {
+      if (!lastWeek || lastWeek < after) continue;
+      for (const p of L.players) {
+        if (p.active === false || !p.tier) continue;
+        const seen = played[p.id];
+        if (seen && ws.some(w => seen.has(w))) continue;              // 한 번이라도 나왔으면 면제
+        if (p.joinWeek && p.joinWeek > ws[0]) continue;               // 중간 등록자는 이전 구간 면제
+        add({ key: `dormant:${p.id}:${label}`, type: "mmr", playerId: p.id,
+          title: `${p.name} · 휴면 강등`,
+          detail: `${label} 출전 0회 → MMR ${-(c.dormancyPenalty || 200)}p`,
+          effect: { mmr: -(c.dormancyPenalty || 200) } });
+      }
+    }
+    return out;
+  }
+
   return {
-    TIER_ORDER, TIER_DEFAULT, HI_TIERS, PRO_TIERS, AMA_TIERS, groupOf,
+    TIER_ORDER, TIER_DEFAULT, HI_TIERS, PRO_TIERS, AMA_TIERS, groupOf, capOfTeam, proposals,
     SKILL_MASTER, SKILL_ICON, SKILL_TIER_DEFAULT,
     FEATURE_DEFS, featOn,
     CONFIG_DEFAULT, newLeague,

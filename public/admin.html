@@ -757,16 +757,14 @@
                 <button class="btn sm" type="button" id="adj-apply">적용</button>
               </div>
             </div>
-            <div class="ops-card" id="loan-card">
-              <h3>LOAN · 임대 정산</h3>
-              <p class="tier-note" style="margin:0">임대 보낸 팀은 경기 1회당 벤/리로드 게이지 1개 (기획안 5-2·6-1)</p>
-              <div id="loan-list"></div>
+            <div class="ops-card" id="appr-card">
+              <h3>APPROVALS · 승인 대기 <span class="chip" id="appr-count">0</span></h3>
+              <p class="tier-note" style="margin:0">규칙상 자동 판정되는 것들 — 승인해야 반영됩니다. 거절 사유는 거래 내역에 남습니다</p>
+              <div class="ops-list" id="appr-list" style="max-height:260px"></div>
             </div>
             <div class="ops-card">
-              <h3>WEEKLY UPDATE · 주간 갱신</h3>
-              <p class="tier-note" style="margin:0">MMR 순위 기반 티어 재배치 · 휴면 강등 · 승격 보상 — <b>M2에서 자동화 예정</b></p>
-              <div class="f-row"><button class="btn sm" type="button" id="run-weekly">수동 실행</button>
-              <span class="chip" id="weekly-msg">M2 예정</span></div>
+              <h3>TEAM CAP · 팀 급여 상한</h3>
+              <div id="cap-list"></div>
             </div>
           </div>
           <div class="ops-card grow">
@@ -1182,9 +1180,14 @@ function tierRowHTML(t) {
         : `<span class="cap">${list.length}명 · 정원 없음</span>`}
       </div>
       <div class="trow-drop">
-        ${list.map(p => `<span class="p-chip" draggable="true" data-id="${p.id}" style="--tc:${TIER_COLOR[t]}">
-          ${badge(p.tier)}${esc(p.name)}
-          <button type="button" data-unplace="${p.id}">✕</button></span>`).join("") || '<span class="hint">여기로 드래그</span>'}
+        ${list.map(p => {
+          const moved = p.initialTier && p.initialTier !== p.tier;
+          const up = moved && ORDER.indexOf(p.tier) < ORDER.indexOf(p.initialTier);
+          return `<span class="p-chip" draggable="true" data-id="${p.id}" style="--tc:${TIER_COLOR[t]}"${moved ? ` title="최초 배치 ${p.initialTier} → 현재 ${p.tier}"` : ""}>
+          ${badge(p.tier)}${esc(p.name)}${moved ? `<small style="color:${up ? "var(--gold)" : "var(--dim)"}">${up ? "▲" : "▼"}${esc(p.initialTier)}${p.promoCredited ? "✓" : ""}</small>` : ""}
+          ${moved ? `<button type="button" data-resetinit="${p.id}" title="최초 배치를 현재 티어로 재설정">⟲</button>` : ""}
+          <button type="button" data-unplace="${p.id}">✕</button></span>`;
+        }).join("") || '<span class="hint">여기로 드래그</span>'}
       </div>
     </div>`;
 }
@@ -1213,10 +1216,27 @@ function renderTier() {
     if (!editable()) return renderTier();
     L.tiers[inp.dataset.cap].cap = Math.max(0, +inp.value || 0); commit(); });
 }
+/* 리그가 시작(경기 1건 이상)되면 최초 배치가 확정된다 — 그 뒤 티어 이동은 승격/강등으로 잡힌다.
+   오타 수정용으로 '최초 배치 재설정'(resetInitial)을 따로 둔다. */
+const leagueStarted = () => L && L.matches.length > 0;
 function placeTier(p, t) {
   if (!editable()) return;
-  p.tier = t; p.initialTier = t;             // 이 보드는 "최초 배치" — 스타트 MMR 기준점
+  const before = p.tier;
+  p.tier = t;
+  if (!leagueStarted()) p.initialTier = t;   // 셋업 중 — 스타트 MMR 기준점도 같이 이동
+  else if (!p.initialTier) p.initialTier = t;
   if (!p.team && p.round === 0) p.round = E.HI_TIERS.includes(t) ? 1 : 2;
+  if (leagueStarted() && before !== t) {
+    const up = E.TIER_ORDER.indexOf(t) < E.TIER_ORDER.indexOf(p.initialTier);
+    logLedger("appr", `${p.name} 티어 ${before ?? "-"} → ${t} (최초 배치 ${p.initialTier}${up ? " · 승격" : ""})`);
+  }
+  commit();
+}
+function resetInitial(p) {
+  if (!editable() || !p.tier) return;
+  if (!confirm(`${p.name}의 최초 배치를 현재 티어(${p.tier})로 재설정합니다.\n승격 판정 기준이 바뀌고 스타트 MMR도 이동합니다. 계속할까요?`)) return;
+  logLedger("appr", `${p.name} 최초 배치 재설정 ${p.initialTier} → ${p.tier}`);
+  p.initialTier = p.tier; p.promoCredited = false;
   commit();
 }
 
@@ -1279,7 +1299,7 @@ function movePlayer(p, newTeamId, silent) {
   else if (!from && to) logLedger("roster", `${to.name} — ${p.name} 영입`);
   else if (from && to)  logLedger("roster", `${p.name} 이적: ${from.name} → ${to.name}`);
 }
-const LEDGER_ICON = { trade: "🔁", coin: "💰", gauge: "🔋", skill: "🛒", draft: "🔨", roster: "📤", adjust: "⚖️" };
+const LEDGER_ICON = { trade: "🔁", coin: "💰", gauge: "🔋", skill: "🛒", draft: "🔨", roster: "📤", adjust: "⚖️", appr: "📋" };
 function renderLedger() {
   const el = $("ledger-list"); if (!el || !L) return;
   el.innerHTML = L.ledger.slice().reverse().map(l => `
@@ -1318,7 +1338,7 @@ function addTeam() {
   if (activeTeams().length >= 4) return toast("팀은 최대 4개까지", true);
   const color = TEAM_COLORS.find(c => !activeTeams().some(t => t.color === c)) || TEAM_COLORS[0];
   L.teams.push({ id: L.seq.team++, name: `새 팀 ${activeTeams().length + 1}`, coach: "", managerId: null,
-    color, coins: 0, gauge: 0, capBonus: 0, skills: [], active: true });
+    color, coins: 0, gauge: 0, salaryCap: L.config.salaryCap, promoCount: 0, skills: [], active: true });
   commit();
 }
 function delTeam(id) {
@@ -1773,7 +1793,7 @@ function renderOps() {
     };
   };
   const R = pickInfo("red"), B = pickInfo("blue");
-  const capOf = side => c.salaryCap + (isLeague ? (T(F[side])?.capBonus || 0) : 0);
+  const capOf = side => isLeague && T(F[side]) ? capOfTeam(T(F[side])) : c.salaryCap;
   const warns = [];
   for (const side of ["red", "blue"]) {
     const loan = loanIds(side);
@@ -1847,9 +1867,8 @@ function renderOps() {
       <label class="mini-inp">주차 <input type="number" data-f="week" value="${F.week}" min="1"></label>
       <select class="txt" data-f="type">${["리그", "아마추어", "프로"].filter(t => t !== "리그" || feat("board")).map(t => `<option ${F.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>
       <label class="mini-inp">급여 상한 <input type="number" id="sal-cap" value="${c.salaryCap}" min="0"></label>
-      ${isLeague ? ["red", "blue"].filter(s => T(F[s])).map(s => `
-        <label class="mini-inp" title="4위 2회·승격 보상으로 붙는 팀별 급여 상한 보너스 (기획안 4-1·4-2)">
-          ${esc(teamName(F[s]))} +<input type="number" data-capbonus="${F[s]}" value="${T(F[s]).capBonus || 0}" min="0" style="width:44px"></label>`).join("") : ""}
+      ${isLeague ? ["red", "blue"].filter(s => T(F[s])).map(s =>
+        `<span class="chip" title="팀별 급여 상한 — 오른쪽 '팀 급여 상한' 카드에서 수정">${esc(teamName(F[s]))} 상한 ${capOfTeam(T(F[s]))}</span>`).join("") : ""}
     </div>
     <div class="mf-grid">
       ${sideHTML("red", "#ff8f9e")}
@@ -1883,14 +1902,6 @@ function renderOps() {
   $("sal-cap").onchange = () => {
     if (!editable()) return renderOps();
     L.config.salaryCap = Math.max(0, +$("sal-cap").value || 0); commit(); };
-  $("ops-form").querySelectorAll("[data-capbonus]").forEach(inp => inp.onchange = () => {
-    if (!editable()) return renderOps();
-    const t = T(+inp.dataset.capbonus);
-    const v = Math.max(0, +inp.value || 0);
-    if (v === (t.capBonus || 0)) return;
-    t.capBonus = v;
-    logLedger("adjust", `${t.name} 급여 상한 보너스 → +${v}`);
-    commit(); });
   $("ops-form").querySelectorAll("[data-mp]").forEach(b => b.onclick = () => {
     const [side, id] = b.dataset.mp.split(":");
     const set = F[side + "Picks"];
@@ -1953,43 +1964,84 @@ function renderOps() {
     if (i >= 0) { L.matches.splice(i, 1); commit(); toast("삭제 — 전체 MMR 재계산 완료"); }
   });
   renderLedger();
-  renderLoan();
+  renderAppr();
+  renderCap();
 }
 
-/* ── 임대 정산 (기획안 5-2·6-1: 임대 보낸 팀에 경기 1회당 게이지 1개) ── */
-function loanStats() {
-  const sent = {}, paid = {};
-  for (const m of L.matches)
-    for (const s of ["red", "blue"])
-      for (const id of (m[s].loan || [])) {
-        const p = P(id);
-        if (p && p.team != null) sent[p.team] = (sent[p.team] || 0) + 1;   // 원 소속팀이 받는다
-      }
-  // 취소된 원장 항목은 원본·역기록 둘 다 canceled 라 자연히 상계된다
-  for (const l of L.ledger)
-    if (l.type === "gauge" && l.loanCount && !l.canceled) paid[l.teamId] = (paid[l.teamId] || 0) + l.loanCount;
-  return { sent, paid };
+/* ── 승인 대기함 ──
+ * engine이 규칙대로 감지한 제안을 띄우고, 관리자가 승인해야 반영된다.
+ * 거절은 사유와 함께 기록에 남고 같은 건이 다시 뜨지 않는다. */
+const capOfTeam = t => E.capOfTeam(L, t);
+function decide(pr, status, reason) {
+  L.approvals.push({ id: L.seq.approval++, key: pr.key, type: pr.type, status, reason: reason || "", at: today() });
+  if (status === "rejected") {
+    logLedger("appr", `⛔ 거절: ${pr.title} — ${pr.detail}${reason ? ` (사유: ${reason})` : ""}`);
+    return;
+  }
+  const t = pr.teamId != null ? T(pr.teamId) : null;
+  const e = pr.effect;
+  if (e.gauge && t) {
+    t.gauge = (t.gauge || 0) + e.gauge;
+    logLedger("gauge", `${t.name} 게이지 +${e.gauge} — ${pr.detail}`, { teamId: t.id, delta: e.gauge });
+  }
+  if (e.promo && t) {
+    const p = P(pr.playerId);
+    if (p) p.promoCredited = true;
+    t.promoCount = (t.promoCount || 0) + 1;
+    let msg = `${t.name} 승격 적립 ${t.promoCount} — ${p ? p.name : ""} ${p ? p.initialTier + "→" + p.tier : ""}`;
+    // 2명당 +5, 최대 +15 (기획안 4-2)
+    if (t.promoCount % 2 === 0) {
+      const base = L.config.salaryCap, cur = capOfTeam(t);
+      if (cur - base < 15) { t.salaryCap = cur + 5; msg += ` → 급여 상한 ${cur} → ${t.salaryCap}`; }
+      else msg += ` (상한 보너스 +15 도달 — 더 오르지 않음)`;
+    }
+    logLedger("appr", `✅ ${msg}`, { teamId: t.id });
+  }
+  if (e.mmr != null && pr.playerId != null) {
+    L.adjusts.push({ id: L.seq.adjust++, playerId: pr.playerId, delta: e.mmr, reason: pr.title, at: today() });
+    logLedger("adjust", `${P(pr.playerId)?.name ?? "?"} MMR ${e.mmr} — ${pr.detail}`);
+  }
 }
-function renderLoan() {
-  const el = $("loan-list"); if (!el || !L) return;
-  $("loan-card").hidden = !feat("board") || !feat("skill");
-  const { sent, paid } = loanStats();
-  const rows = activeTeams().map(t => ({ t, n: sent[t.id] || 0, p: paid[t.id] || 0 })).filter(r => r.n > 0);
-  el.innerHTML = rows.map(r => `
-    <div class="f-row" style="margin-top:6px">
-      <span style="flex:1; font-size:12px">${esc(r.t.name)} — 임대 <b>${r.n}</b>회 · 지급 ${r.p}</span>
-      ${r.n > r.p
-        ? `<button class="btn sm" type="button" data-loanpay="${r.t.id}" data-n="${r.n - r.p}">🔋 +${r.n - r.p} 지급</button>`
-        : '<span class="chip">정산 완료</span>'}
-    </div>`).join("") || '<p class="tier-note" style="margin:6px 0 0">임대 출전 기록 없음</p>';
-  el.querySelectorAll("[data-loanpay]").forEach(b => b.onclick = () => {
+const APPR_ICON = { gauge: "🔋", promo: "⬆️", mmr: "⚖️" };
+function renderAppr() {
+  const el = $("appr-list"); if (!el || !L) return;
+  const list = E.proposals(L);
+  $("appr-count").textContent = list.length;
+  el.innerHTML = list.map((pr, i) => `
+    <div class="l-row">
+      <span>${APPR_ICON[pr.type] || "·"}</span>
+      <span style="flex:1"><b>${esc(pr.title)}</b><br><small style="color:var(--dim)">${esc(pr.detail)}</small></span>
+      <button type="button" data-ok="${i}">승인</button>
+      <button type="button" data-no="${i}">거절</button>
+    </div>`).join("") || '<div class="l-row" style="color:var(--dim)">승인 대기 중인 항목 없음</div>';
+  el.querySelectorAll("[data-ok]").forEach(b => b.onclick = () => {
     if (!editable()) return;
-    const t = T(+b.dataset.loanpay), n = +b.dataset.n;
-    if (!t || !n) return;
-    t.gauge = (t.gauge || 0) + n;
-    logLedger("gauge", `${t.name} 임대 ${n}회 정산 — 게이지 +${n}`, { teamId: t.id, delta: n, loanCount: n });
-    toast(`${t.name} 게이지 +${n} 지급`);
-    commit();
+    decide(list[+b.dataset.ok], "approved");
+    toast("승인 — 반영됨"); commit();
+  });
+  el.querySelectorAll("[data-no]").forEach(b => b.onclick = () => {
+    if (!editable()) return;
+    const pr = list[+b.dataset.no];
+    const reason = prompt(`거절 사유 (거래 내역에 남습니다)\n\n${pr.title}\n${pr.detail}`, "");
+    if (reason === null) return;
+    decide(pr, "rejected", reason.trim());
+    toast("거절 — 사유가 기록됨"); commit();
+  });
+}
+/* ── 팀별 급여 상한 (기획안 4-1: 기본 90, 4위 2회·승격 보상으로 가산) ── */
+function renderCap() {
+  const el = $("cap-list"); if (!el || !L) return;
+  el.innerHTML = activeTeams().map(t => `
+    <div class="f-row" style="margin-top:6px">
+      <span style="flex:1; font-size:12px">${esc(t.name)}<small style="color:var(--dim)"> · 승격 적립 ${t.promoCount || 0}</small></span>
+      <input class="txt" type="number" data-teamcap="${t.id}" value="${capOfTeam(t)}" min="0" style="width:64px">
+    </div>`).join("") || '<p class="tier-note" style="margin:6px 0 0">팀 없음</p>';
+  el.querySelectorAll("[data-teamcap]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderCap();
+    const t = T(+inp.dataset.teamcap), v = Math.max(0, +inp.value || 0);
+    if (v === capOfTeam(t)) return;
+    logLedger("appr", `${t.name} 급여 상한 ${capOfTeam(t)} → ${v} (관리자 직접 수정)`, { teamId: t.id });
+    t.salaryCap = v; commit();
   });
 }
 $("adj-apply").onclick = () => {
@@ -2004,7 +2056,6 @@ $("adj-apply").onclick = () => {
   toast("보정 적용 — 재계산 완료");
   commit();
 };
-$("run-weekly").onclick = () => { $("weekly-msg").textContent = "월요일 배치는 M2에서 자동화됩니다"; };
 
 /* ══════════ 드래그 앤 드롭 (공용) ══════════ */
 document.addEventListener("dragstart", e => {
@@ -2098,6 +2149,8 @@ document.addEventListener("click", e => {
     if (!confirm("팀을 삭제/비활성합니다. 소속 선수는 미배정으로 돌아갑니다. 계속?")) return;
     delTeam(+dt.dataset.delteam); return;
   }
+  const ri = e.target.closest("[data-resetinit]");
+  if (ri) { resetInitial(P(+ri.dataset.resetinit)); return; }
   const un = e.target.closest("[data-unplace]");
   if (un) {
     if (!editable()) return;
