@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>초축 리그 — 관리자</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
 <style>
   :root{
     --bg:#05080f; --panel:#0b1120; --panel-2:#111a2e; --line:#1d2942; --line-2:#2a3a5e;
@@ -12,6 +16,7 @@
     --danger:#ff4d6a; --gold:#ffc233; --purple:#b18cff; --blue:#5aa2ff; --gray:#9fb0c8;
   }
   *{box-sizing:border-box}
+  html{zoom:1.12}   /* 전체 글씨·UI 확대 — 취향에 따라 1.0~1.25 조정 */
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:"Pretendard","Pretendard Variable",-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
@@ -54,6 +59,7 @@
   main{flex:1 1 auto; display:flex; min-height:0}
   .view{flex:1 1 auto; display:flex; min-width:0; min-height:0}
   .view[hidden]{display:none}
+  .step[hidden],.mini-inp[hidden],.ops-card[hidden]{display:none}
 
   /* ════ 공용 ════ */
   .badge{
@@ -173,10 +179,10 @@
   .p-chip .ico{font-size:14px; line-height:1}
 
   /* ════ 홈: 리그 목록 + 체크리스트 ════ */
-  .home{padding:22px; gap:18px; align-items:flex-start; overflow-y:auto}
+  .home{padding:28px 22px; gap:22px; align-items:flex-start; justify-content:center; overflow-y:auto}
   .home-col{display:flex; flex-direction:column; gap:12px; min-height:0}
-  .home-col.leagues{flex:0 0 390px}
-  .home-col.check{flex:1 1 auto; max-width:560px}
+  .home-col.leagues{flex:0 1 440px}
+  .home-col.check{flex:0 1 620px}
   .home h2{margin:0; font-size:15px; font-weight:800}
   .home h2 small{display:block; font-size:10.5px; font-weight:800; letter-spacing:2.5px; color:var(--accent)}
   .lg-card{
@@ -190,12 +196,22 @@
   .lg-meta{display:flex; gap:6px; flex-wrap:wrap}
   .lg-edit{display:flex; flex-direction:column; gap:8px; border-top:1px dashed var(--line); padding-top:10px}
   .lg-edit .row{display:flex; gap:7px; align-items:center; flex-wrap:wrap; color:var(--dim); font-size:12px; font-weight:700}
+  .feat-box{display:flex; flex-direction:column; gap:5px; border:1px solid var(--line); border-radius:9px; padding:9px 11px; background:#0a101d}
+  .feat-title{font-size:12px} .feat-title small{color:var(--dim); font-weight:600; letter-spacing:0}
+  .feat-row{display:flex; gap:8px; align-items:flex-start; cursor:pointer; padding:3px 2px; border-radius:6px}
+  .feat-row:hover{background:#0d1526}
+  .feat-row input{margin-top:3px; accent-color:var(--accent); cursor:pointer}
+  .feat-row span b{font-size:12.5px} .feat-row span small{display:block; color:var(--muted); font-size:11px; font-weight:500}
   .lg-add{
     border:1.5px dashed var(--line-2); border-radius:14px; padding:14px; text-align:center;
     color:var(--dim); font:inherit; font-weight:800; font-size:13.5px; background:none; cursor:pointer;
   }
   .lg-add:hover{color:var(--accent); border-color:var(--accent)}
-  .lg-new{border:1px solid var(--accent); border-radius:14px; padding:14px 17px;
+  #lg-modal{position:fixed; inset:0; z-index:45; display:grid; place-items:center;
+    background:rgba(3,6,12,.85); backdrop-filter:blur(3px)}
+  #lg-modal[hidden]{display:none}
+  .lg-new{width:min(400px, 92vw); box-shadow:0 30px 80px -30px #000;
+    border:1px solid var(--accent); border-radius:14px; padding:18px 20px;
     display:flex; flex-direction:column; gap:9px; background:linear-gradient(180deg,#0a1120,#070d19)}
   .ck-list{display:flex; flex-direction:column; gap:7px}
   .ck-item{
@@ -524,12 +540,62 @@
     .mf-grid{grid-template-columns:1fr}
     .ops-bottom{flex-direction:column}
     .ops-bottom .side-cards{flex:0 0 auto; width:100%}
-    .home{flex-direction:column}
+    .home{flex-direction:column; justify-content:flex-start}
     .home-col.leagues{flex:0 0 auto; width:100%}
+    .home-col.check{flex:0 0 auto; width:100%}
     .trow{flex-direction:column; gap:8px}
     .trow-head{flex:0 0 auto}
     .trow-drop{border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:8px}
   }
+
+  /* ════ 리디자인 — 공개 페이지와 동일 톤 (서체·모티프) ════ */
+  :root{
+    --bg:#04070e;
+    --disp:"Black Han Sans","Pretendard Variable",sans-serif;
+    --num:"Chakra Petch","Pretendard Variable",monospace;
+  }
+  body{font-family:"Pretendard Variable",Pretendard,-apple-system,"Segoe UI","Malgun Gothic",sans-serif}
+
+  /* 디스플레이 서체 — 제목·팀명·낙찰 무대 */
+  .brand h1{font-family:var(--disp); font-weight:400; font-size:17px; letter-spacing:.4px}
+  .home h2, .aside-head h2, .users-inner h2, .auth-card h2{
+    font-family:var(--disp); font-weight:400 !important; letter-spacing:.4px}
+  .home h2{font-size:20px}
+  .aside-head h2{font-size:18px}
+  .stage-card .pname{font-family:var(--disp); font-weight:400; letter-spacing:1px}
+  .team-head .t-name{font-family:var(--disp); font-weight:400; font-size:20px; letter-spacing:.5px}
+  .round-tag{font-family:var(--num)}
+
+  /* 숫자 서체 — 스코어보드 감각 */
+  .badge, .chip, .cap, .card .mmr, .card .sal, .mini-inp input, .coin-set input, .price,
+  .save-state, .ck-mark, .mini i, .u-row .st{font-family:var(--num)}
+
+  /* 영문 레이블 */
+  .brand h1 em, .aside-head .label, .home h2 small, .auth-card h2 small,
+  .board-bar .bar-label, .stage .label, .ops-card h3, .rcol h3{font-family:var(--num)}
+
+  /* 버튼·리본 */
+  .btn.primary{background:linear-gradient(115deg, var(--accent), #34f0c6); border-color:transparent}
+  .step{font-size:12.5px; font-weight:700}
+  .steps{overflow-y:hidden; padding:3px 0}   /* 글씨 확대로 생기는 1~2px 세로 스크롤바 방지 */
+
+  /* 빈 십자 칸 = 새 팀 만들기 버튼 */
+  .team-empty{
+    all:unset; box-sizing:border-box; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px;
+    background:linear-gradient(180deg,#0a1120,#070d19); color:var(--dim); text-align:center;
+    transition:color .15s, background .15s;
+  }
+  .team-empty .plus{
+    width:52px; height:52px; border-radius:50%; border:1.5px dashed var(--line-2);
+    display:grid; place-items:center; font-size:26px; line-height:1; transition:all .15s;
+  }
+  .team-empty b{font-size:14px; font-weight:800; letter-spacing:.3px}
+  .team-empty small{font-size:11.5px; color:var(--dim)}
+  .team-empty:hover{color:var(--accent); background:linear-gradient(180deg,#0b1424,#081020)}
+  .team-empty:hover .plus{border-color:var(--accent); color:var(--accent);
+    box-shadow:0 0 26px -8px var(--accent); transform:scale(1.06)}
+  .team-empty:focus-visible{outline:2px solid var(--accent); outline-offset:-3px}
 </style>
 </head>
 <body>
@@ -562,15 +628,6 @@
         <h2><small>LEAGUES</small>리그 목록</h2>
         <div id="lg-list"></div>
         <button class="lg-add" type="button" id="lg-add-btn">+ 새 리그 만들기</button>
-        <div class="lg-new" id="lg-new" hidden>
-          <b style="font-size:14px">새 리그</b>
-          <input class="txt" id="new-lg-name" placeholder="리그 이름 (예: 2026 썸머리그)">
-          <div class="f-row">기간 <input class="txt" type="date" id="new-lg-start"> ~ <input class="txt" type="date" id="new-lg-end"></div>
-          <div class="f-row">
-            <button class="btn sm primary" type="button" id="new-lg-create">만들기</button>
-            <button class="btn sm" type="button" id="new-lg-cancel">취소</button>
-          </div>
-        </div>
       </div>
       <div class="home-col check" id="home-check"></div>
     </section>
@@ -628,7 +685,6 @@
           <label class="mini-inp">S~A- 최대 <input id="cap-hi" type="number" min="0"></label>
           <label class="mini-inp">B+~C- 최대 <input id="cap-lo" type="number" min="0"></label>
           <label class="mini-inp">팀 스킬 상한 <input id="cap-skill" type="number" min="0"></label>
-          <button class="btn sm" type="button" id="add-team">+ 팀 만들기</button>
           <button class="btn sm" type="button" id="trade-btn">🔁 트레이드</button>
           <span class="note">초과 시 ⚠ 경고 (저장은 허용)</span>
         </div>
@@ -726,6 +782,19 @@
   </footer>
 </div>
 
+<div id="lg-modal" hidden>
+  <div class="lg-new" id="lg-new">
+    <b style="font-size:15px">🏆 새 리그 만들기</b>
+    <input class="txt" id="new-lg-name" placeholder="리그 이름 (예: 2026 썸머리그)">
+    <div class="f-row">기간 <input class="txt" type="date" id="new-lg-start"> ~ <input class="txt" type="date" id="new-lg-end"></div>
+    <p class="tier-note" style="margin:0; font-size:11px">기간은 나중에 리그 카드에서 언제든 수정할 수 있습니다</p>
+    <div class="f-row" style="justify-content:flex-end">
+      <button class="btn sm" type="button" id="new-lg-cancel">취소</button>
+      <button class="btn sm primary" type="button" id="new-lg-create">만들기</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <div id="auth" hidden>
@@ -764,6 +833,10 @@ let calc = null;     // Engine.recalc 결과
 let curView = "home";
 let selected = null, selectedSkill = null, tradeOpen = false, pickedTeam = null;
 let saveTimer = null, saving = false, pendingSave = false;
+
+/* 기능 모듈 토글 — 리그 카드의 "기능 구성" 체크박스로 켜고 끔 (끄면 숨김만, 데이터 보존) */
+const FEAT_VIEWS = { board: 1, skill: 1, draft: 1 };   // 기능에 묶인 뷰 (users·tier·ops는 항상 켜짐)
+const feat = k => !L || E.featOn(L, k);
 
 const P = id => L.players.find(p => p.id === id);
 const T = id => L.teams.find(t => t.id === id);
@@ -884,9 +957,9 @@ const CHECKS = [
   { key: "users", label: "선수 등록", st: () => ({ done: L.players.length > 0, text: `${L.players.length}명 참가` }) },
   { key: "tier",  label: "티어 배치", st: () => { const left = activePlayers().filter(p => !p.tier).length;
       return { done: L.players.length > 0 && left === 0, text: left ? `${left}명 미배치` : "전원 배치 완료" }; } },
-  { key: "skill", label: "스킬 티어", st: () => ({ done: true, text: "54종 · 기본값 적용" }) },
-  { key: "board", label: "팀 편성", st: () => ({ done: activeTeams().length > 0, text: `${activeTeams().length}팀 · 소속 ${activePlayers().filter(p => p.team).length}명` }) },
-  { key: "draft", label: "드래프트", st: () => L.draft.done ? { done: true, text: "완료" } : L.draft.started ? { done: false, text: `ROUND ${L.draft.round} 진행 중` } : { done: false, text: "시작 전" } },
+  { key: "skill", feat: "skill", label: "스킬 티어", st: () => ({ done: true, text: "54종 · 기본값 적용" }) },
+  { key: "board", feat: "board", label: "팀 편성", st: () => ({ done: activeTeams().length > 0, text: `${activeTeams().length}팀 · 소속 ${activePlayers().filter(p => p.team).length}명` }) },
+  { key: "draft", feat: "draft", label: "드래프트", st: () => L.draft.done ? { done: true, text: "완료" } : L.draft.started ? { done: false, text: `ROUND ${L.draft.round} 진행 중` } : { done: false, text: "시작 전" } },
 ];
 async function renderHome() {
   // 리그 목록
@@ -903,8 +976,17 @@ async function renderHome() {
         <div class="row">기간 <input class="txt" type="date" id="lg-start" value="${L.start || ""}"> ~
           <input class="txt" type="date" id="lg-end" value="${L.end || ""}"></div>
         <p class="tier-note" style="margin:0; font-size:11px">기간은 리그 진행 중에도 수정 가능 — 주차가 자동 재산출됩니다</p>
+        <div class="feat-box">
+          <b class="feat-title">⚙ 기능 구성 <small>— 이 리그에서 쓸 기능만 체크 (끄면 숨김, 데이터는 보존)</small></b>
+          ${E.FEATURE_DEFS.map(f => `
+          <label class="feat-row">
+            <input type="checkbox" data-feat="${f.key}" ${feat(f.key) ? "checked" : ""}>
+            <span><b>${f.label}</b><small>${f.desc}</small></span>
+          </label>`).join("")}
+        </div>
         <div class="row">
           <button class="btn sm" type="button" id="lg-archive">${L.status === "active" ? "보관 처리" : "다시 활성화"}</button>
+          <button class="btn sm danger-line" type="button" id="lg-delete" style="margin-left:auto">🗑 리그 삭제</button>
         </div>
       </div>` : ""}
     </div>`).join("") || `<p class="tier-note">아직 리그가 없습니다 — 아래에서 첫 리그를 만들어주세요 🏆</p>`;
@@ -924,6 +1006,27 @@ async function renderHome() {
         L.status = L.status === "active" ? "archived" : "active";
         commit(); renderHome();
       };
+      $("lg-delete").onclick = async () => {
+        const typed = prompt(
+          `⚠ 리그를 완전히 삭제합니다 — 경기 기록·팀·선수 참가 정보가 모두 사라집니다.\n` +
+          `(전역 유저 명단은 유지 · 삭제 직전 상태는 data/backups/에 스냅샷으로 남습니다)\n\n` +
+          `정말 삭제하려면 리그 이름을 그대로 입력하세요: ${L.name}`);
+        if (typed === null) return;
+        if (typed.trim() !== L.name) return toast("이름이 일치하지 않습니다 — 삭제 취소", true);
+        const r = await api("DELETE", `/api/league/${L.id}`);
+        if (r.status !== 200) return toast(r.data?.error || "삭제 실패", true);
+        toast(`"${L.name}" 리그가 삭제되었습니다`);
+        clearTimeout(saveTimer); pendingSave = false;   // 삭제된 리그를 다시 저장하지 않도록
+        L = null; calc = null; curView = "home";
+        await boot();
+      };
+      $("lg-list").querySelectorAll("[data-feat]").forEach(cb => cb.onchange = () => {
+        if (!editable()) return renderHome();
+        if (!L.features) L.features = { board: true, skill: true, draft: true };
+        L.features[cb.dataset.feat] = cb.checked;
+        if (FEAT_VIEWS[curView] && !feat(curView)) curView = "home";
+        commit(); renderHome();
+      });
     }
   }
   // 체크리스트
@@ -931,15 +1034,19 @@ async function renderHome() {
     <h2><small>SETUP</small>리그 셋업 체크리스트</h2>
     ${L.status === "archived" ? `<div class="arch-banner">📦 보관된 리그 — 조회 전용입니다. 수정하려면 "다시 활성화"</div>` : ""}
     <div class="ck-list">
-    ${CHECKS.map((c, i) => {
+    ${(() => {
+    const checks = CHECKS.filter(c => !c.feat || feat(c.feat));
+    const opFirst = checks.find(c => c.key === "board" || c.key === "draft");
+    return checks.map((c, i) => {
       const s = c.st();
-      const divider = i === 4 ? `<div class="ck-divider">여기까지 완료되면 리그 생성 완료</div>` : "";
+      const divider = c === opFirst ? `<div class="ck-divider">여기까지 완료되면 리그 생성 완료</div>` : "";
       return divider + `<div class="ck-item${s.done ? " ok" : ""}">
         <span class="ck-mark">${s.done ? "✓" : i + 1}</span>
         <div class="ck-body"><b>${c.label}</b><small>${esc(s.text)}</small></div>
         <button class="btn sm" type="button" data-goto="${c.key === "home" ? "home" : c.key}">이동 →</button>
       </div>`;
-    }).join("")}
+    }).join("");
+    })()}
     <div class="ck-item ok" style="border-color:color-mix(in srgb, var(--accent) 45%, transparent)">
       <span class="ck-mark">▶</span>
       <div class="ck-body"><b>리그 운영</b><small>경기 입력 · 팀 순위 · 거래 내역 · 주간 갱신</small></div>
@@ -947,14 +1054,17 @@ async function renderHome() {
     </div>
     </div>`;
 }
-$("lg-add-btn").onclick = () => { $("lg-new").hidden = false; $("new-lg-name").focus(); };
-$("new-lg-cancel").onclick = () => { $("lg-new").hidden = true; };
+$("lg-add-btn").onclick = () => { $("lg-modal").hidden = false; $("new-lg-name").focus(); };
+$("new-lg-cancel").onclick = () => { $("lg-modal").hidden = true; };
+$("lg-modal").onclick = e => { if (e.target.id === "lg-modal") $("lg-modal").hidden = true; };
+$("new-lg-name").onkeydown = e => { if (e.key === "Enter") $("new-lg-create").click(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("lg-modal").hidden = true; });
 $("new-lg-create").onclick = async () => {
   const name = $("new-lg-name").value.trim();
   if (!name) return toast("리그 이름을 입력하세요", true);
   const r = await api("POST", "/api/leagues", { name, start: $("new-lg-start").value, end: $("new-lg-end").value });
   if (r.status !== 200) return toast(r.data?.error || "생성 실패", true);
-  $("lg-new").hidden = true;
+  $("lg-modal").hidden = true;
   $("new-lg-name").value = "";
   toast(`"${name}" 리그가 만들어졌습니다 — 선수 등록부터 시작하세요!`);
   await loadLeague(r.data.id);
@@ -1164,14 +1274,14 @@ function movePlayer(p, newTeamId, silent) {
   else if (!from && to) logLedger("roster", `${to.name} — ${p.name} 영입`);
   else if (from && to)  logLedger("roster", `${p.name} 이적: ${from.name} → ${to.name}`);
 }
-const LEDGER_ICON = { trade: "🔁", coin: "💰", skill: "🛒", draft: "🔨", roster: "📤", adjust: "⚖️" };
+const LEDGER_ICON = { trade: "🔁", coin: "💰", gauge: "🔋", skill: "🛒", draft: "🔨", roster: "📤", adjust: "⚖️" };
 function renderLedger() {
   const el = $("ledger-list"); if (!el || !L) return;
   el.innerHTML = L.ledger.slice().reverse().map(l => `
     <div class="l-row${l.canceled ? " cx" : ""}">
       <span>${LEDGER_ICON[l.type] || "·"}</span>
       <span style="flex:1">${esc(l.text)} <small style="color:var(--dim)">${l.at || ""}</small></span>
-      ${!l.canceled && (l.type === "coin" || l.type === "skill") && l.teamId != null
+      ${!l.canceled && (l.type === "coin" || l.type === "gauge" || l.type === "skill") && l.teamId != null
         ? `<button type="button" data-cancel="${l.id}">취소</button>` : ""}
     </div>`).join("") || '<div class="l-row" style="color:var(--dim)">아직 없음</div>';
   el.querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => cancelLedger(+b.dataset.cancel));
@@ -1185,6 +1295,9 @@ function cancelLedger(id) {
   if (l.type === "coin") {
     t.coins = Math.max(0, t.coins - (l.delta || 0));
     logLedger("coin", `↩ 취소: ${l.text}`, { teamId: t.id, delta: -(l.delta || 0), canceled: true });
+  } else if (l.type === "gauge") {
+    t.gauge = Math.max(0, (t.gauge || 0) - (l.delta || 0));
+    logLedger("gauge", `↩ 취소: ${l.text}`, { teamId: t.id, delta: -(l.delta || 0), canceled: true });
   } else if (l.type === "skill") {
     t.skills = t.skills.filter(n => n !== l.skill);
     t.coins += l.price || 0;
@@ -1200,7 +1313,7 @@ function addTeam() {
   if (activeTeams().length >= 4) return toast("팀은 최대 4개까지", true);
   const color = TEAM_COLORS.find(c => !activeTeams().some(t => t.color === c)) || TEAM_COLORS[0];
   L.teams.push({ id: L.seq.team++, name: `새 팀 ${activeTeams().length + 1}`, coach: "", managerId: null,
-    color, coins: 0, capBonus: 0, skills: [], active: true });
+    color, coins: 0, gauge: 0, capBonus: 0, skills: [], active: true });
   commit();
 }
 function delTeam(id) {
@@ -1219,6 +1332,7 @@ function renderBoard() {
   ["cap-total", "cap-hi", "cap-lo", "cap-skill"].forEach((id, i) => {
     $(id).value = [c.rosterCap.total, c.rosterCap.hi, c.rosterCap.lo, c.rosterCap.skill][i];
   });
+  $("cap-skill").parentElement.hidden = !feat("skill");
   const q = $("q").value.trim().toLowerCase();
   const free = activePlayers().filter(p => p.team === null && p.tier !== null).sort(sortP);
   $("pool-count").textContent = free.length;
@@ -1233,19 +1347,10 @@ function renderBoard() {
 
   const teams = activeTeams();
   const mark = board.querySelector(".center-mark").outerHTML;
-  board.style.gridTemplateColumns = teams.length === 1 ? "1fr" : "1fr 1fr";
-  board.style.gridTemplateRows = teams.length > 2 ? "1fr 1fr" : "1fr";
-  if (!teams.length) {
-    board.innerHTML = `<div class="board-empty">아직 팀이 없습니다<br><br>
-      <button class="btn primary" type="button" onclick="addTeam()">+ 첫 팀 만들기</button></div>` + mark;
-    board.querySelector(".center-mark").hidden = true;
-    if (tradeOpen) renderTrade();
-    return;
-  }
   const freeSkills = Object.keys(L.skillTier).filter(n => !teams.some(t => t.skills.includes(n)));
   board.innerHTML = teams.map(t => {
     const list = activePlayers().filter(p => p.team === t.id).sort(sortP);
-    const sal = list.reduce((s, p) => s + salOf(p), 0);
+    // 급여는 출전 4명 합으로만 의미가 있으므로(기획안 4-1) 팀 전원 합은 표시하지 않는다 — 경기 입력에서 검증
     const hi = list.filter(p => E.HI_TIERS.includes(p.tier)).length;
     const lo = list.length - hi;
     const tierOver = ["S", "A", "B", "C"].filter(g => t.skills.filter(n => E.groupOf(L.skillTier[n]) === g || L.skillTier[n] === g).length > c.skillCap[g]);
@@ -1265,11 +1370,11 @@ function renderBoard() {
           <span class="chip${list.length > c.rosterCap.total ? " bad" : ""}">인원 <b>${list.length}</b>/${c.rosterCap.total}</span>
           <span class="chip${hi > c.rosterCap.hi ? " bad" : ""}">S~A- <b>${hi}</b>/${c.rosterCap.hi}</span>
           <span class="chip${lo > c.rosterCap.lo ? " bad" : ""}">B+~C- <b>${lo}</b>/${c.rosterCap.lo}</span>
-          <span class="chip sal">급여 ${sal}</span>
-          <span class="chip">급여 상한 ${c.salaryCap + (t.capBonus || 0)}</span>
           <label class="mini-inp coin-edit">코인 <input type="number" data-coin="${t.id}" value="${t.coins}" min="0"></label>
+          ${feat("skill") ? `<label class="mini-inp coin-edit">게이지 <input type="number" data-gauge="${t.id}" value="${t.gauge || 0}" min="0"></label>
+          <span class="chip">벤/리로드 <b>${Math.floor((t.gauge || 0) / (c.gaugePerUse || 5))}</b>회</span>` : ""}
         </div>
-        <div class="team-skills">
+        ${feat("skill") ? `<div class="team-skills">
           <span class="chip${t.skills.length > c.rosterCap.skill ? " bad" : ""}">스킬 <b>${t.skills.length}</b>/${c.rosterCap.skill}</span>
           ${t.skills.map(n => `<span class="s-own" style="border-color:color-mix(in srgb, ${TIER_COLOR[L.skillTier[n]] || "#888"} 40%, transparent)">
             ${sic(n)} ${esc(n)}<button type="button" data-steam="${t.id}" data-sname="${esc(n)}">✕</button></span>`).join("")}
@@ -1281,7 +1386,7 @@ function renderBoard() {
             </optgroup>`).join("")}
           </select>
           ${tierOver.length ? `<span class="chip bad">⚠ ${tierOver.join("·")}급 상한 초과</span>` : ""}
-        </div>
+        </div>` : ""}
         <div class="roster">
           ${list.length ? list.map(p => `
             <span class="p-chip" draggable="true" data-id="${p.id}" style="--tc:${t.color}">
@@ -1291,8 +1396,16 @@ function renderBoard() {
           : '<span class="hint">여기로 선수를 끌어다 놓으세요</span>'}
         </div>
       </section>`;
-  }).join("") + mark;
-  board.querySelector(".center-mark").hidden = teams.length !== 4;
+  }).join("")
+  /* 빈 십자 칸 = 곧 "새 팀 만들기" 버튼 (항상 2×2 고정) */
+  + Array.from({ length: Math.max(0, 4 - teams.length) }, () => `
+      <button class="team-empty" type="button" data-addteam>
+        <span class="plus">+</span>
+        <b>새 팀 만들기</b>
+        <small>클릭하면 이 자리에 팀이 생깁니다</small>
+      </button>`).join("") + mark;
+
+  board.querySelectorAll("[data-addteam]").forEach(b => b.onclick = addTeam);
 
   board.querySelectorAll("[data-tname]").forEach(inp => inp.onchange = () => {
     if (!editable()) return renderBoard();
@@ -1310,6 +1423,14 @@ function renderBoard() {
     const delta = v - t.coins;
     t.coins = v;
     if (delta) logLedger("coin", `${t.name} 코인 ${delta > 0 ? "+" : ""}${delta} (관리자 조정)`, { teamId: t.id, delta });
+    commit(); });
+  board.querySelectorAll("[data-gauge]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderBoard();
+    const t = T(+inp.dataset.gauge);
+    const v = Math.max(0, +inp.value || 0);
+    const delta = v - (t.gauge || 0);
+    t.gauge = v;
+    if (delta) logLedger("gauge", `${t.name} 벤/리로드 게이지 ${delta > 0 ? "+" : ""}${delta} (관리자 지급)`, { teamId: t.id, delta });
     commit(); });
   board.querySelectorAll("[data-addskill]").forEach(sel => sel.onchange = () => {
     if (!sel.value) return;
@@ -1329,7 +1450,6 @@ function renderBoard() {
     if (!editable()) return renderBoard();
     L.config.rosterCap[keys[i]] = Math.max(0, +$(id).value || 0); commit(); };
 });
-$("add-team").onclick = addTeam;
 $("q").addEventListener("input", renderBoard);
 
 /* ── 트레이드 ── */
@@ -1636,6 +1756,8 @@ function usedToday(side) {
 function renderOps() {
   if (!L) return;
   const c = L.config;
+  if (!feat("board") && F.type === "리그") F.type = "아마추어";   // 팀 기능 없이는 리그전 불가
+  $("standings").closest(".ops-card").hidden = !feat("board");
   const isLeague = F.type === "리그";
   const teams = activeTeams();
   if (isLeague) {
@@ -1669,7 +1791,7 @@ function renderOps() {
       </button>`).join("") || '<span class="hint">소유 스킬 없음 — 팀 편성에서 등록/구매</span>';
   };
   const warns = [];
-  if (isLeague) for (const side of ["red", "blue"]) {
+  if (isLeague && feat("skill")) for (const side of ["red", "blue"]) {
     const dup = [...F[side + "Skills"]].filter(n => usedToday(side).has(n));
     if (dup.length) warns.push(`<span class="w">⚠ 피어리스룰: ${esc(teamName(F[side]))} — ${dup.join(", ")} 오늘 이미 사용</span>`);
   }
@@ -1681,8 +1803,8 @@ function renderOps() {
   } else warns.push(`<span class="i">각 팀 4명을 선택하세요 (${R.n} / ${B.n})</span>`);
   for (const [s, info] of [["red", R], ["blue", B]]) {
     if (info.sal > capOf(s)) warns.push(`<span class="w">💰 ${esc(sideName(s))} 급여 ${info.sal} &gt; ${capOf(s)} — 게임 내 -${Math.ceil((info.sal - capOf(s)) / 5) * 5}골 (경고만)</span>`);
-    if (F.type === "아마추어" && info.ids.some(id => E.HI_TIERS.includes(P(id).tier))) warns.push(`<span class="e">⚠ 아마추어는 B~C-만 — ${esc(sideName(s))} 자격 위반</span>`);
-    if (F.type === "프로" && info.ids.some(id => ["B-", "C+", "C", "C-"].includes(P(id).tier))) warns.push(`<span class="e">⚠ 프로는 S~B+만 — ${esc(sideName(s))} 자격 위반</span>`);
+    if (F.type === "아마추어" && info.ids.some(id => !E.AMA_TIERS.includes(P(id).tier))) warns.push(`<span class="e">⚠ 아마추어는 B~C-만 — ${esc(sideName(s))} 자격 위반</span>`);
+    if (F.type === "프로" && info.ids.some(id => !E.PRO_TIERS.includes(P(id).tier))) warns.push(`<span class="e">⚠ 프로는 S~B+만 — ${esc(sideName(s))} 자격 위반</span>`);
     if (!isLeague && info.ids.some(id => !P(id).team)) warns.push(`<span class="w">⚠ 소속팀 없는 선수 참가 — 아마/프로는 소속팀 있는 선수만 (기획안 8-1)</span>`);
   }
   if (isLeague && F.red != null && F.red === F.blue) warns.push(`<span class="e">⚠ 같은 팀끼리는 경기 불가</span>`);
@@ -1718,8 +1840,8 @@ function renderOps() {
       <div class="pickzone" style="max-height:110px; overflow-y:auto">${pool.sort(sortP).filter(p => !F[side + "Picks"].has(p.id)).map(p => `
         <button class="pickp" type="button" data-mp="${side}:${p.id}" style="--sc:${color}">
           <i>${p.tier}</i>${esc(p.name)}</button>`).join("") || '<span class="hint">선수 없음</span>'}</div>
-      <div class="mf-sub">사용 스킬 <b>${F[side + "Skills"].size}</b> — ${isLeague ? "소유 스킬만" : "아마/프로: 자유 사용"}</div>
-      <div class="pickzone skills">${skillZone(side)}</div>
+      ${feat("skill") ? `<div class="mf-sub">사용 스킬 <b>${F[side + "Skills"].size}</b> — ${isLeague ? "소유 스킬만" : "아마/프로: 자유 사용"}</div>
+      <div class="pickzone skills">${skillZone(side)}</div>` : ""}
     </div>`;
   };
   const both = R.n === 4 && B.n === 4;
@@ -1730,8 +1852,11 @@ function renderOps() {
       <h3>NEW MATCH · 경기 입력</h3>
       <input class="txt" type="date" data-f="date" value="${F.date}" style="width:130px">
       <label class="mini-inp">주차 <input type="number" data-f="week" value="${F.week}" min="1"></label>
-      <select class="txt" data-f="type">${["리그", "아마추어", "프로"].map(t => `<option ${F.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <select class="txt" data-f="type">${["리그", "아마추어", "프로"].filter(t => t !== "리그" || feat("board")).map(t => `<option ${F.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>
       <label class="mini-inp">급여 상한 <input type="number" id="sal-cap" value="${c.salaryCap}" min="0"></label>
+      ${isLeague ? ["red", "blue"].filter(s => T(F[s])).map(s => `
+        <label class="mini-inp" title="4위 2회·승격 보상으로 붙는 팀별 급여 상한 보너스 (기획안 4-1·4-2)">
+          ${esc(teamName(F[s]))} +<input type="number" data-capbonus="${F[s]}" value="${T(F[s]).capBonus || 0}" min="0" style="width:44px"></label>`).join("") : ""}
     </div>
     <div class="mf-grid">
       ${sideHTML("red", "#ff8f9e")}
@@ -1765,6 +1890,14 @@ function renderOps() {
   $("sal-cap").onchange = () => {
     if (!editable()) return renderOps();
     L.config.salaryCap = Math.max(0, +$("sal-cap").value || 0); commit(); };
+  $("ops-form").querySelectorAll("[data-capbonus]").forEach(inp => inp.onchange = () => {
+    if (!editable()) return renderOps();
+    const t = T(+inp.dataset.capbonus);
+    const v = Math.max(0, +inp.value || 0);
+    if (v === (t.capBonus || 0)) return;
+    t.capBonus = v;
+    logLedger("adjust", `${t.name} 급여 상한 보너스 → +${v}`);
+    commit(); });
   $("ops-form").querySelectorAll("[data-mp]").forEach(b => b.onclick = () => {
     const [side, id] = b.dataset.mp.split(":");
     const set = F[side + "Picks"];
@@ -1971,6 +2104,7 @@ const TIPS = {
   ops:   "💡 경기 저장 = MMR 즉시 반영 · 삭제 = 전체 재계산 · 아마추어/프로는 임시 팀명 + 스킬 자유",
 };
 function showView(which) {
+  if (L && FEAT_VIEWS[which] && !feat(which)) which = "home";   // 꺼진 기능의 뷰는 홈으로
   curView = which;
   for (const v of ["home", "users", "tier", "skill", "board", "draft", "ops"])
     $("view-" + v).hidden = v !== which;
@@ -1979,6 +2113,8 @@ function showView(which) {
   renderAll();
 }
 function renderAll() {
+  document.querySelectorAll("header .step").forEach(b =>
+    b.hidden = !!(L && FEAT_VIEWS[b.dataset.goto] && !feat(b.dataset.goto)));
   if (!L) { renderHome(); return; }
   if (curView === "home") renderHome();
   if (curView === "users") renderUsers();

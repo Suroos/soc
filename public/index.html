@@ -4,113 +4,221 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>초축 리그 — TOP RATE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
 <style>
   :root{
-    --bg:#05080f; --panel:#0b1120; --line:#1d2942; --line-2:#2a3a5e;
-    --text:#eef2fa; --muted:#7e8aa5; --dim:#4a5675;
-    --accent:#00e0b8; --danger:#ff4d6a; --gold:#ffc233;
+    --bg:#04070e; --panel:#0a1220; --panel-2:#0d1526; --line:#1b2740; --line-2:#293a5c;
+    --text:#eef3fc; --muted:#8b97b1; --dim:#54617d;
+    --mint:#00e5b0; --gold:#ffc94d; --danger:#ff4d6a; --up:#3ddc97;
+    --disp:"Black Han Sans", "Pretendard Variable", sans-serif;
+    --num:"Chakra Petch", "Pretendard Variable", monospace;
   }
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
   body{
     margin:0; background:var(--bg); color:var(--text);
-    font-family:"Pretendard","Pretendard Variable",-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
-    font-size:14px; line-height:1.5;
+    font-family:"Pretendard Variable",Pretendard,-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+    font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
     background-image:
-      radial-gradient(1100px 500px at 50% -10%, #0d1b33 0%, transparent 60%),
-      radial-gradient(900px 600px at 100% 110%, #081527 0%, transparent 55%);
+      radial-gradient(1200px 560px at 50% -12%, #0c1a33 0%, transparent 62%),
+      radial-gradient(1000px 640px at 100% 112%, #071426 0%, transparent 55%);
     background-attachment:fixed;
   }
+  .num{font-family:var(--num); font-variant-numeric:tabular-nums}
+
+  /* ── 헤더 ── */
   header{
-    display:flex; align-items:center; gap:14px; padding:0 20px; height:56px;
-    background:linear-gradient(180deg,#0d1526,#0a101f); border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:16px; padding:0 22px; height:60px;
+    background:linear-gradient(180deg,rgba(13,21,38,.92),rgba(8,13,26,.88));
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
     position:sticky; top:0; z-index:10;
   }
-  .brand{display:flex; align-items:center; gap:11px; white-space:nowrap}
-  .brand .slash{width:5px; height:24px; background:var(--accent); transform:skew(-14deg);
-    box-shadow:0 0 14px 0 rgba(0,224,184,.55)}
-  .brand h1{margin:0; font-size:15px; font-weight:900; letter-spacing:-.3px}
-  .brand h1 em{font-style:normal; color:var(--accent); font-size:10px; font-weight:700;
-    letter-spacing:2px; display:block; line-height:1; margin-top:1px}
+  .brand{display:flex; align-items:center; gap:12px; white-space:nowrap}
+  .brand .slash{width:6px; height:26px; background:var(--mint); transform:skew(-14deg);
+    box-shadow:0 0 18px 0 rgba(0,229,176,.6)}
+  .brand h1{margin:0; font-size:16px; font-weight:900; letter-spacing:-.3px}
+  .brand h1 em{font-style:normal; color:var(--mint); font-size:10px; font-weight:700;
+    letter-spacing:2.5px; display:block; line-height:1.2; margin-top:1px; font-family:var(--num)}
   select.lg{
-    font:inherit; font-size:12.5px; font-weight:700; color:var(--text);
-    background:#060b16; border:1px solid var(--line-2); border-radius:7px; padding:6px 9px;
+    font:inherit; font-size:13px; font-weight:700; color:var(--text);
+    background:#060b16; border:1px solid var(--line-2); border-radius:8px; padding:7px 10px;
   }
-  select.lg:focus{outline:none; border-color:var(--accent)}
-  header a{margin-left:auto; color:var(--dim); font-size:12px; font-weight:700; text-decoration:none}
+  select.lg:focus{outline:none; border-color:var(--mint)}
+  header a{margin-left:auto; color:var(--dim); font-size:12px; font-weight:700; text-decoration:none;
+    font-family:var(--num); letter-spacing:1px}
   header a:hover{color:var(--muted)}
 
-  .wrap{max-width:860px; margin:0 auto; padding:22px 18px 60px; display:flex; flex-direction:column; gap:14px}
-  .rate-head{display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap}
-  .rate-head small{display:block; font-size:10.5px; font-weight:800; letter-spacing:3px; color:var(--accent)}
-  .rate-head h2{margin:2px 0 0; font-size:27px; font-weight:900; font-style:italic; letter-spacing:-.5px}
-  .rate-head .st{margin-left:auto; color:var(--dim); font-size:12px; font-weight:700}
-  .tabs{display:flex; gap:6px}
-  .tab{font:inherit; font-size:12.5px; font-weight:800; color:var(--muted); cursor:pointer;
-    background:#0d1526; border:1px solid var(--line-2); border-radius:8px; padding:7px 20px}
-  .tab.on{color:#03150f; background:var(--accent); border-color:var(--accent); box-shadow:0 0 16px -6px var(--accent)}
+  /* ── 본문 틀 ── */
+  .wrap{max-width:940px; margin:0 auto; padding:30px 20px 80px; display:flex; flex-direction:column; gap:18px}
+  .rate-head{display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap}
+  .rate-head small{display:block; font-size:11px; font-weight:700; letter-spacing:4px; color:var(--mint);
+    font-family:var(--num)}
+  .rate-head h2{margin:3px 0 0; font-size:38px; font-weight:400; font-family:var(--disp);
+    letter-spacing:.5px; line-height:1.05; text-shadow:0 0 34px rgba(0,229,176,.25)}
+  .rate-head .st{margin-left:auto; color:var(--dim); font-size:12.5px; font-weight:700; font-family:var(--num)}
 
-  .badge{display:inline-block; min-width:30px; text-align:center; font-weight:800; font-size:11px;
-    padding:2px 4px; border-radius:5px; font-variant-numeric:tabular-nums;
+  .tabs{display:flex; gap:0; border:1px solid var(--line-2); border-radius:10px; overflow:hidden;
+    width:max-content; background:#080e1b}
+  .tab{font:inherit; font-size:13px; font-weight:800; color:var(--muted); cursor:pointer;
+    background:none; border:none; padding:9px 24px; position:relative; letter-spacing:-.2px}
+  .tab + .tab::before{content:""; position:absolute; left:0; top:9px; bottom:9px; width:1px;
+    background:var(--line-2); transform:skew(-14deg)}
+  .tab.on{color:#03150f; background:linear-gradient(115deg, var(--mint), #34f0c6)}
+  .tab.on::before{display:none}
+  .tab:focus-visible{outline:2px solid var(--mint); outline-offset:-2px}
+
+  /* ── 공용 칩/뱃지 ── */
+  .badge{display:inline-block; min-width:32px; text-align:center; font-weight:700; font-size:11.5px;
+    padding:2.5px 5px; border-radius:5px; font-family:var(--num);
     color:var(--tc); border:1px solid color-mix(in srgb, var(--tc) 45%, transparent);
     background:color-mix(in srgb, var(--tc) 12%, transparent)}
-  .chip{font-size:11px; font-weight:700; color:var(--muted); border-radius:5px; padding:2.5px 9px;
-    background:#0d1526; border:1px solid var(--line); font-variant-numeric:tabular-nums}
-  .chip.coin{color:var(--accent); border-color:color-mix(in srgb, var(--accent) 30%, transparent)}
+  .chip{font-size:11.5px; font-weight:700; color:var(--muted); border-radius:6px; padding:3px 10px;
+    background:var(--panel-2); border:1px solid var(--line); font-variant-numeric:tabular-nums}
+  .chip.coin{color:var(--mint); border-color:color-mix(in srgb, var(--mint) 30%, transparent)}
   .sicon{width:15px; height:15px; vertical-align:-2px}
-  .mini{font-size:11px; font-weight:700; color:var(--muted); border:1px solid var(--line);
-    border-radius:5px; padding:1px 7px; background:#0d1526}
-  .mini i{font-style:normal; font-weight:800; margin-right:3px; font-size:10px}
+  .mini{font-size:11.5px; font-weight:700; color:var(--muted); border:1px solid var(--line);
+    border-radius:6px; padding:2px 8px; background:var(--panel-2)}
+  .mini i{font-style:normal; font-weight:700; margin-right:4px; font-size:10px; font-family:var(--num)}
+  .empty{color:var(--dim); text-align:center; padding:52px 0; font-size:13.5px}
 
-  .r-row{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px;
-    font-variant-numeric:tabular-nums; cursor:pointer}
-  .r-row:hover{background:#0d1526}
-  .r-row .rk{flex:0 0 24px; text-align:right; color:var(--dim); font-weight:800; font-size:12px}
-  .r-row.top3 .rk{color:var(--gold)}
-  .r-row .nm{flex:1; font-weight:700; font-size:13.5px; min-width:0}
-  .r-row .nm .sub{display:block; font-size:11px; font-weight:600; color:var(--muted)}
-  .r-row .pt{font-weight:800; font-size:14px}
-  .r-row .dl{flex:0 0 52px; text-align:right; font-size:11.5px; font-weight:800}
-  .r-row .dl.up{color:#3ddc97} .r-row .dl.dn{color:var(--danger)} .r-row .dl.z{color:var(--dim)}
-  .r-row .rc{flex:0 0 76px; text-align:right; color:var(--muted); font-size:11px}
-  .s-cut{display:flex; align-items:center; gap:8px; color:var(--gold); font-size:10px; font-weight:800; letter-spacing:2px; margin:2px 0}
-  .s-cut::before,.s-cut::after{content:""; flex:1; height:1px; background:color-mix(in srgb, var(--gold) 35%, transparent)}
+  /* ── 포디움 (TOP 3) ── */
+  .podium{
+    display:grid; grid-template-columns:1fr 1.18fr 1fr; gap:14px; align-items:end;
+    position:relative; padding-top:18px;
+  }
+  .podium::before{ /* 센터서클 — 경기장 모티프 */
+    content:""; position:absolute; left:50%; top:-40px; transform:translateX(-50%);
+    width:520px; height:520px; border-radius:50%;
+    border:1.5px solid color-mix(in srgb, var(--mint) 14%, transparent);
+    box-shadow:inset 0 0 120px -60px rgba(0,229,176,.25); pointer-events:none;
+  }
+  .p-card{
+    all:unset; box-sizing:border-box; cursor:pointer; position:relative; z-index:1;
+    display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center;
+    padding:22px 16px 18px; border-radius:16px; border:1px solid var(--line-2);
+    background:
+      radial-gradient(340px 150px at 50% 0%, color-mix(in srgb, var(--tc) 13%, transparent), transparent 72%),
+      linear-gradient(180deg,#0b1322,#070d19);
+    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .p-card:hover, .p-card:focus-visible{transform:translateY(-4px); border-color:color-mix(in srgb, var(--tc) 55%, var(--line-2));
+    box-shadow:0 18px 50px -22px color-mix(in srgb, var(--tc) 55%, transparent)}
+  .p-card:focus-visible{outline:2px solid var(--mint); outline-offset:2px}
+  .p-card.r1{
+    padding:30px 18px 24px; border-color:color-mix(in srgb, var(--gold) 45%, var(--line-2));
+    background:
+      radial-gradient(380px 180px at 50% 0%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 72%),
+      linear-gradient(180deg,#0d1424,#080d19);
+    box-shadow:0 24px 70px -30px rgba(255,201,77,.35);
+  }
+  .p-rank{
+    position:absolute; top:-13px; left:50%; transform:translateX(-50%) skew(-14deg);
+    font-family:var(--num); font-style:italic; font-weight:700; font-size:13px;
+    color:#03150f; background:var(--tc); padding:3px 14px; border-radius:5px;
+    box-shadow:0 4px 18px -6px color-mix(in srgb, var(--tc) 80%, transparent);
+  }
+  .p-card.r1 .p-rank{background:var(--gold); font-size:14.5px; padding:4px 17px}
+  .p-tier{margin-top:4px}
+  .p-name{font-family:var(--disp); font-weight:400; font-size:24px; letter-spacing:.5px; margin-top:2px; line-height:1.15}
+  .p-card.r1 .p-name{font-size:31px}
+  .p-team{font-size:12px; font-weight:800}
+  .p-mmr{font-family:var(--num); font-style:italic; font-weight:700; font-size:38px; line-height:1.1;
+    margin-top:6px; letter-spacing:-.5px}
+  .p-card.r1 .p-mmr{font-size:50px; color:var(--gold); text-shadow:0 0 30px rgba(255,201,77,.35)}
+  .p-sub{font-size:12px; color:var(--muted); font-family:var(--num); font-weight:600}
+  .p-sub .up{color:var(--up)} .p-sub .dn{color:var(--danger)} .p-sub .z{color:var(--dim)}
 
-  .pub-team{--tc:var(--accent);
-    border:1px solid var(--line); border-radius:12px; padding:12px 15px; margin-bottom:8px;
-    display:flex; flex-direction:column; gap:7px;
-    background:radial-gradient(300px 110px at 0% 0%, color-mix(in srgb, var(--tc) 8%, transparent), transparent 70%),
+  /* ── 랭킹 리스트 (4위~) ── */
+  .r-list{display:flex; flex-direction:column; gap:4px; margin-top:6px}
+  .r-row{all:unset; box-sizing:border-box; cursor:pointer;
+    display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px;
+    border:1px solid transparent; transition:background .15s, border-color .15s}
+  .r-row:hover{background:var(--panel); border-color:var(--line)}
+  .r-row:focus-visible{outline:2px solid var(--mint); outline-offset:-2px}
+  .r-row .rk{flex:0 0 34px; text-align:right; color:var(--dim); font-family:var(--num);
+    font-style:italic; font-weight:700; font-size:15px}
+  .r-row .nm{flex:1; font-weight:700; font-size:14.5px; min-width:0}
+  .r-row .nm .sub{display:block; font-size:11.5px; font-weight:600; color:var(--muted)}
+  .r-row .pt{font-family:var(--num); font-style:italic; font-weight:700; font-size:17px}
+  .r-row .dl{flex:0 0 56px; text-align:right; font-size:12px; font-weight:700; font-family:var(--num)}
+  .r-row .dl.up{color:var(--up)} .r-row .dl.dn{color:var(--danger)} .r-row .dl.z{color:var(--dim)}
+  .r-row .rc{flex:0 0 84px; text-align:right; color:var(--muted); font-size:11.5px; font-family:var(--num)}
+  .s-cut{display:flex; align-items:center; gap:10px; color:var(--gold); font-size:10.5px; font-weight:700;
+    letter-spacing:2.5px; margin:8px 0 4px; font-family:var(--num)}
+  .s-cut i{font-style:normal; transform:skew(-14deg); border:1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+    padding:2px 10px; border-radius:4px; background:color-mix(in srgb, var(--gold) 8%, transparent)}
+  .s-cut::before,.s-cut::after{content:""; flex:1; height:1px;
+    background:repeating-linear-gradient(90deg, color-mix(in srgb, var(--gold) 45%, transparent) 0 8px, transparent 8px 16px)}
+
+  /* 등장 모션 */
+  @keyframes rise{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+  .podium .p-card{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+  .podium .p-card:nth-child(1){animation-delay:.08s}
+  .podium .p-card:nth-child(2){animation-delay:0s}
+  .podium .p-card:nth-child(3){animation-delay:.14s}
+  .r-list .r-row, .r-list .s-cut{animation:rise .4s cubic-bezier(.2,.7,.3,1) both;
+    animation-delay:calc(.18s + var(--i, 0) * 28ms)}
+  .team-card{animation:rise .45s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--i, 0) * 70ms)}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important}
+  }
+
+  /* ── 팀 순위 ── */
+  .team-card{--tc:var(--mint);
+    position:relative; overflow:hidden;
+    border:1px solid var(--line); border-radius:14px; padding:16px 18px 15px 26px; margin-bottom:10px;
+    display:flex; gap:16px; align-items:flex-start;
+    background:
+      radial-gradient(420px 150px at 0% 0%, color-mix(in srgb, var(--tc) 10%, transparent), transparent 70%),
       linear-gradient(180deg,#0a1120,#070d19)}
-  .pt-head{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
-  .pt-head .tag{width:12px; height:12px; background:var(--tc); transform:skew(-14deg); border-radius:2px;
-    box-shadow:0 0 10px color-mix(in srgb, var(--tc) 60%, transparent)}
-  .pt-head b{font-size:15px}
-  .pt-roster{display:flex; flex-wrap:wrap; gap:4px}
+  .team-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:7px;
+    background:var(--tc); transform:skew(-3deg) translateX(-2px);
+    box-shadow:0 0 24px color-mix(in srgb, var(--tc) 55%, transparent)}
+  .tc-rank{flex:0 0 auto; font-family:var(--num); font-style:italic; font-weight:700; font-size:34px;
+    line-height:1; color:var(--dim); margin-top:2px; min-width:40px; text-align:center}
+  .team-card.first .tc-rank{color:var(--gold); text-shadow:0 0 22px rgba(255,201,77,.4)}
+  .tc-main{flex:1; min-width:0; display:flex; flex-direction:column; gap:8px}
+  .tc-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+  .tc-head b{font-family:var(--disp); font-weight:400; font-size:22px; letter-spacing:.4px}
+  .tc-coach{color:var(--muted); font-size:12px; font-weight:700}
+  .tc-rec{margin-left:auto; color:var(--muted); font-size:13px; font-family:var(--num); font-weight:600}
+  .tc-pts{font-family:var(--num); font-style:italic; font-weight:700; font-size:21px; color:var(--mint)}
+  .tc-pts i{font-style:normal; font-size:10px; margin-left:2px; letter-spacing:1px; color:var(--dim)}
+  .tc-roster{display:flex; flex-wrap:wrap; gap:5px}
 
-  .m-row{display:flex; align-items:center; gap:7px; padding:8px 10px; border-radius:8px; margin-bottom:6px;
-    border:1px solid var(--line); background:#0a1120; font-size:12px; flex-wrap:wrap}
-  .m-row .vs2{font-weight:800}
-  .m-row .res{font-size:10.5px; font-weight:800; border-radius:4px; padding:1px 6px}
-  .m-row .res.rw{color:#ff8f9e; background:rgba(255,77,106,.14)}
-  .m-row .res.bw{color:#8fc3ff; background:rgba(90,162,255,.14)}
-  .m-row .res.dr{color:var(--muted); background:#0d1526}
-  .m-row .und{color:var(--gold); font-size:10.5px; font-weight:800}
-  .m-row .lineup{width:100%; display:flex; flex-wrap:wrap; gap:4px; padding-top:2px}
-  .m-row .lineup .d{font-size:10px; font-weight:800}
-  .m-row .lineup .d.up{color:#3ddc97} .m-row .lineup .d.dn{color:var(--danger)} .m-row .lineup .d.z{color:var(--dim)}
+  /* ── 경기 로그 ── */
+  .m-row{display:flex; align-items:center; gap:9px; padding:11px 14px; border-radius:11px; margin-bottom:7px;
+    border:1px solid var(--line); background:linear-gradient(180deg,#0a1120,#080e1a); font-size:12.5px; flex-wrap:wrap}
+  .m-row .date{font-family:var(--num); font-size:11px; color:var(--dim); font-weight:600}
+  .m-row .vs2{font-weight:800; font-size:14px}
+  .m-row .vs2 i{font-style:italic; font-family:var(--num); color:var(--dim); font-size:11px; margin:0 5px; font-weight:700}
+  .m-row .res{font-size:11px; font-weight:800; border-radius:5px; padding:2px 9px; transform:skew(-8deg)}
+  .m-row .res.rw{color:#ff8f9e; background:rgba(255,77,106,.15); border:1px solid rgba(255,77,106,.3)}
+  .m-row .res.bw{color:#8fc3ff; background:rgba(90,162,255,.15); border:1px solid rgba(90,162,255,.3)}
+  .m-row .res.dr{color:var(--muted); background:var(--panel-2); border:1px solid var(--line)}
+  .m-row .und{color:var(--gold); font-size:11px; font-weight:800}
+  .m-row .lineup{width:100%; display:flex; flex-wrap:wrap; gap:4px; padding-top:3px}
+  .m-row .lineup .d{font-size:10px; font-weight:700; font-family:var(--num)}
+  .m-row .lineup .d.up{color:var(--up)} .m-row .lineup .d.dn{color:var(--danger)} .m-row .lineup .d.z{color:var(--dim)}
 
-  /* 선수 상세 */
+  /* ── 선수 상세 모달 ── */
   #modal{position:fixed; inset:0; z-index:40; display:grid; place-items:center;
-    background:rgba(3,6,12,.85); backdrop-filter:blur(3px)}
+    background:rgba(3,6,12,.86); backdrop-filter:blur(4px)}
   #modal[hidden]{display:none}
-  .modal-card{width:min(560px, 94vw); max-height:88vh; overflow-y:auto;
-    border:1px solid var(--line-2); border-radius:16px; padding:22px;
-    background:linear-gradient(180deg,#0c1322,#080d19); display:flex; flex-direction:column; gap:12px}
-  .modal-card .mc-head{display:flex; align-items:center; gap:10px}
-  .modal-card .mc-head h3{margin:0; font-size:22px; font-weight:900; flex:1}
-  .modal-card .mc-close{all:unset; cursor:pointer; color:var(--dim); font-size:16px; padding:4px 8px}
+  .modal-card{width:min(580px, 94vw); max-height:88vh; overflow-y:auto; position:relative;
+    border:1px solid var(--line-2); border-radius:18px; padding:26px 24px 22px;
+    background:linear-gradient(180deg,#0c1322,#080d19); display:flex; flex-direction:column; gap:14px;
+    box-shadow:0 40px 100px -40px #000}
+  .modal-card::before{content:""; position:absolute; left:0; right:0; top:0; height:3px;
+    border-radius:18px 18px 0 0; background:linear-gradient(90deg, var(--mint), transparent 70%)}
+  .modal-card .mc-head{display:flex; align-items:center; gap:12px}
+  .modal-card .mc-head h3{margin:0; font-size:30px; font-weight:400; font-family:var(--disp); flex:1; letter-spacing:.5px}
+  .modal-card .mc-close{all:unset; cursor:pointer; color:var(--dim); font-size:17px; padding:4px 9px}
   .modal-card .mc-close:hover{color:var(--text)}
-  .spark{width:100%; height:120px; background:rgba(0,0,0,.25); border:1px solid var(--line); border-radius:10px}
-  .empty{color:var(--dim); text-align:center; padding:40px 0; font-size:13px}
+  .spark{width:100%; height:130px; background:rgba(0,0,0,.28); border:1px solid var(--line); border-radius:12px}
 </style>
 </head>
 <body>
@@ -120,15 +228,15 @@
     <h1 id="brand">초축 리그<em>PUBLIC</em></h1>
   </div>
   <select class="lg" id="lg-select" aria-label="리그 선택"></select>
-  <a href="/admin">관리자 →</a>
+  <a href="/admin">ADMIN →</a>
 </header>
 
 <div class="wrap">
   <div class="rate-head">
-    <div><small id="lg-sub">CHOCHUK LEAGUE</small><h2 id="tab-title">🏆 TOP RATE</h2></div>
+    <div><small id="lg-sub">CHOCHUK LEAGUE</small><h2 id="tab-title">TOP RATE</h2></div>
     <span class="st" id="lg-period"></span>
   </div>
-  <div class="tabs">
+  <div class="tabs" role="tablist">
     <button class="tab on" type="button" data-tab="rate">TOP RATE</button>
     <button class="tab" type="button" data-tab="teams">팀 순위</button>
     <button class="tab" type="button" data-tab="log">경기 로그</button>
@@ -147,7 +255,7 @@ const E = Engine;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const TIER_COLOR = {
-  "S":"#ffc233","A+":"#c4a4ff","A":"#b18cff","A-":"#9a71f2",
+  "S":"#ffc94d","A+":"#c4a4ff","A":"#b18cff","A-":"#9a71f2",
   "B+":"#79b4ff","B":"#5aa2ff","B-":"#4187e6",
   "C+":"#b4c3d8","C":"#9fb0c8","C-":"#8496af",
 };
@@ -159,6 +267,11 @@ const P = id => L.players.find(p => p.id === id);
 const T = id => L.teams.find(t => t.id === id);
 const teamName = id => T(id)?.name ?? "(팀)";
 const recOf = id => calc.records[id] || { w: 0, d: 0, l: 0 };
+const deltaOf = p => {
+  const base = p.initialTier ? L.tiers[p.initialTier].mmr : 0;
+  return (calc.mmr[p.id] ?? base) - base;
+};
+const dlHTML = d => `<i class="${d > 0 ? "up" : d < 0 ? "dn" : "z"}">${d > 0 ? "▲" + d : d < 0 ? "▼" + (-d) : "—"}</i>`;
 
 async function boot() {
   SYS = await (await fetch("/api/system")).json();
@@ -176,12 +289,20 @@ async function loadLeague(id) {
   calc = E.recalc(L);
   $("brand").innerHTML = `${esc(L.name)}<em>PUBLIC</em>`;
   $("lg-period").textContent = `${L.start || "?"} ~ ${L.end || "?"}${L.status === "archived" ? " · 보관됨" : ""}`;
+  // 리그별 기능 구성: 팀 편성 꺼진 리그는 팀 순위 탭 숨김
+  const teamsTab = document.querySelector('[data-tab="teams"]');
+  teamsTab.hidden = !E.featOn(L, "board");
+  if (teamsTab.hidden && tab === "teams") {
+    tab = "rate";
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.dataset.tab === "rate"));
+    $("tab-title").textContent = "TOP RATE";
+  }
   render();
 }
 document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
   tab = b.dataset.tab;
   document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === b));
-  $("tab-title").textContent = tab === "rate" ? "🏆 TOP RATE" : tab === "teams" ? "🛡️ 팀 순위" : "📋 경기 로그";
+  $("tab-title").textContent = tab === "rate" ? "TOP RATE" : tab === "teams" ? "팀 순위" : "경기 로그";
   render();
 });
 
@@ -192,25 +313,46 @@ function render() {
   else renderLog();
 }
 
-/* ── TOP RATE ── */
+/* ── TOP RATE — TOP 3 포디움 + 리스트 ── */
 function renderRate() {
   const ranked = E.rankings(L, calc);
   const sCut = L.tiers["S"]?.cap ?? 8;
-  $("content").innerHTML = ranked.map((p, i) => {
-    const base = p.initialTier ? L.tiers[p.initialTier].mmr : 0;
-    const d = (calc.mmr[p.id] ?? base) - base;
-    const r = recOf(p.id);
-    const t = T(p.team);
-    return (i === sCut ? '<div class="s-cut">S 유지선 · TOP ' + sCut + "</div>" : "") + `
-    <div class="r-row${i < 3 ? " top3" : ""}" data-player="${p.id}">
-      <span class="rk">${i + 1}</span>
+  if (!ranked.length) {
+    $("content").innerHTML = '<div class="empty">아직 티어 배치된 선수가 없습니다</div>';
+    return;
+  }
+  const pod = (p, rank) => {
+    const t = T(p.team), r = recOf(p.id), d = deltaOf(p);
+    return `<button class="p-card r${rank}" type="button" style="--tc:${t?.color || "var(--mint)"}" data-player="${p.id}">
+      <span class="p-rank">RANK ${rank}</span>
+      <span class="p-tier">${badge(p.tier)}</span>
+      <b class="p-name">${esc(p.name)}</b>
+      <span class="p-team" style="color:${t ? t.color : "var(--dim)"}">${t ? esc(t.name) : "무소속"}</span>
+      <span class="p-mmr">${calc.mmr[p.id] ?? "-"}</span>
+      <span class="p-sub">${dlHTML(d)} · ${r.w}승 ${r.d}무 ${r.l}패</span>
+    </button>`;
+  };
+  const usePodium = ranked.length >= 3;
+  const podium = usePodium
+    ? `<div class="podium">${pod(ranked[1], 2)}${pod(ranked[0], 1)}${pod(ranked[2], 3)}</div>` : "";
+  const rest = usePodium ? ranked.slice(3) : ranked;
+  const off = usePodium ? 3 : 0;
+  let li = 0;
+  const rows = rest.map((p, i) => {
+    const ai = i + off;
+    const t = T(p.team), r = recOf(p.id), d = deltaOf(p);
+    const cut = ai === sCut ? `<div class="s-cut" style="--i:${li++}"><i>S 유지선 · TOP ${sCut}</i></div>` : "";
+    return cut + `
+    <button class="r-row" type="button" data-player="${p.id}" style="--i:${li++}">
+      <span class="rk num">${ai + 1}</span>
       ${badge(p.tier)}
       <span class="nm">${esc(p.name)}<span class="sub">${esc(p.pos ?? "포지션 미지정")} · ${t ? `<b style="color:${t.color}">${esc(t.name)}</b>` : "무소속"}</span></span>
-      <span class="pt">${calc.mmr[p.id] ?? "-"}</span>
+      <span class="pt num">${calc.mmr[p.id] ?? "-"}</span>
       <span class="dl ${d > 0 ? "up" : d < 0 ? "dn" : "z"}">${d > 0 ? "▲" + d : d < 0 ? "▼" + (-d) : "—"}</span>
       <span class="rc">${r.w}승 ${r.d}무 ${r.l}패</span>
-    </div>`;
-  }).join("") || '<div class="empty">아직 티어 배치된 선수가 없습니다</div>';
+    </button>`;
+  }).join("");
+  $("content").innerHTML = podium + `<div class="r-list">${rows}</div>`;
   $("content").querySelectorAll("[data-player]").forEach(el => el.onclick = () => showPlayer(+el.dataset.player));
 }
 
@@ -222,19 +364,22 @@ function renderTeams() {
     const t = s.t;
     const members = L.players.filter(p => p.active !== false && p.team === t.id)
       .sort((a, b) => E.TIER_ORDER.indexOf(a.tier) - E.TIER_ORDER.indexOf(b.tier) || a.name.localeCompare(b.name, "ko"));
-    return `<div class="pub-team" style="--tc:${t.color}">
-      <div class="pt-head">
-        <span style="color:${i === 0 ? "var(--gold)" : "var(--dim)"}; font-weight:800">${i + 1}</span>
-        <span class="tag"></span><b>${esc(t.name)}</b>
-        <span style="color:var(--muted); font-size:11.5px">감독 ${esc(P(t.managerId)?.name ?? t.coach ?? "—")}</span>
-        <span style="margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums">${s.w}승 ${s.d}무 ${s.l}패</span>
-        <span style="color:var(--accent); font-weight:900">${s.pts}점</span>
-        ${L.config.showCoinsPublic ? `<span class="chip coin">코인 ${t.coins}</span>` : ""}
+    return `<article class="team-card${i === 0 ? " first" : ""}" style="--tc:${t.color}; --i:${i}">
+      <span class="tc-rank">${i + 1}</span>
+      <div class="tc-main">
+        <div class="tc-head">
+          <b>${esc(t.name)}</b>
+          <span class="tc-coach">감독 ${esc(P(t.managerId)?.name ?? t.coach ?? "—")}</span>
+          <span class="tc-rec">${s.w}승 ${s.d}무 ${s.l}패</span>
+          <span class="tc-pts">${s.pts}<i>PTS</i></span>
+          ${L.config.showCoinsPublic ? `<span class="chip coin">코인 ${t.coins}</span>` : ""}
+          ${E.featOn(L, "skill") ? `<span class="chip coin" title="벤/리로드 게이지 — ${L.config.gaugePerUse || 5}개당 1회 사용">🔋 ${t.gauge || 0} <small>(${Math.floor((t.gauge || 0) / (L.config.gaugePerUse || 5))}회)</small></span>` : ""}
+        </div>
+        <div class="tc-roster">${members.map(p =>
+          `<span class="mini"><i style="color:${TIER_COLOR[p.tier] || "#4a5675"}">${p.tier ?? "?"}</i>${esc(p.name)}${mgr.has(p.id) ? " 👑" : ""}<small style="color:var(--dim)"> ${esc(p.pos ?? "")}</small></span>`).join("") || '<span class="mini" style="opacity:.5">선수 없음</span>'}</div>
+        ${E.featOn(L, "skill") ? `<div class="tc-roster">${t.skills.map(n => `<span class="mini" title="${esc(L.skillTier[n] || "")}급">${sic(n)} ${esc(n)}</span>`).join("") || '<span class="mini" style="opacity:.5">소유 스킬 없음</span>'}</div>` : ""}
       </div>
-      <div class="pt-roster">${members.map(p =>
-        `<span class="mini"><i style="color:${TIER_COLOR[p.tier] || "#4a5675"}">${p.tier ?? "?"}</i>${esc(p.name)}${mgr.has(p.id) ? " 👑" : ""}<small style="color:var(--dim)"> ${esc(p.pos ?? "")}</small></span>`).join("") || '<span class="mini" style="opacity:.5">선수 없음</span>'}</div>
-      <div class="pt-roster">${t.skills.map(n => `<span class="mini" title="${esc(L.skillTier[n] || "")}급">${sic(n)} ${esc(n)}</span>`).join("") || '<span class="mini" style="opacity:.5">소유 스킬 없음</span>'}</div>
-    </div>`;
+    </article>`;
   }).join("") || '<div class="empty">아직 팀이 없습니다</div>';
 }
 
@@ -251,12 +396,13 @@ function renderLog() {
       return `<span class="mini">${esc(p.name)} <span class="d ${d > 0 ? "up" : d < 0 ? "dn" : "z"}">${d > 0 ? "+" + d : d || "0"}</span></span>`;
     };
     return `<div class="m-row">
-      <span class="chip">${m.type} · ${m.week}주차 · ${m.date || ""}</span>
-      <span class="vs2">${esc(rn)} vs ${esc(bn)}</span>
+      <span class="chip">${m.type} · ${m.week}주차</span>
+      <span class="date">${m.date || ""}</span>
+      <span class="vs2">${esc(rn)}<i>VS</i>${esc(bn)}</span>
       <span class="res ${m.result === "red" ? "rw" : m.result === "blue" ? "bw" : "dr"}">${m.result === "red" ? "레드 승" : m.result === "blue" ? "블루 승" : "무승부"}</span>
-      ${mc.und ? '<span class="und">⚡언더독</span>' : ""}
+      ${mc.und ? '<span class="und">⚡ 언더독</span>' : ""}
       ${sk.length ? `<span title="${esc(sk.join(", "))}">${sk.map(n => sic(n)).join("")}</span>` : ""}
-      <div class="lineup">${m.red.players.map(chip).join("")}<span style="color:var(--dim); font-size:10px; align-self:center">vs</span>${m.blue.players.map(chip).join("")}</div>
+      <div class="lineup">${m.red.players.map(chip).join("")}<span style="color:var(--dim); font-size:10px; align-self:center; font-family:var(--num); font-style:italic">vs</span>${m.blue.players.map(chip).join("")}</div>
     </div>`;
   }).join("") || '<div class="empty">아직 경기가 없습니다</div>';
 }
@@ -272,7 +418,6 @@ function showPlayer(id) {
   const events = [];
   for (const m of L.matches) if (m.red.players.includes(id) || m.blue.players.includes(id))
     events.push({ date: m.date || "", order: 1, seq: m.id, get: () => calc.matchCalc[m.id]?.after?.[id] });
-  const running = { v: pts[0] };
   for (const a of L.adjusts) if (a.playerId === id)
     events.push({ date: a.at || "", order: 0, seq: a.id, adj: a.delta });
   events.sort((x, y) => x.date < y.date ? -1 : x.date > y.date ? 1 : (x.order - y.order) || (x.seq - y.seq));
@@ -282,12 +427,13 @@ function showPlayer(id) {
     else cur = ev.get() ?? cur;
     pts.push(cur);
   }
-  // SVG polyline
-  const w = 500, h = 100, pad = 8;
+  // SVG: 라인 + 면 채우기
+  const w = 500, h = 110, pad = 10;
   const min = Math.min(...pts), max = Math.max(...pts);
   const x = i => pad + (pts.length > 1 ? i * (w - pad * 2) / (pts.length - 1) : 0);
   const y = v => max === min ? h / 2 : pad + (max - v) * (h - pad * 2) / (max - min);
   const line = pts.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  const area = `${pad},${h - 4} ` + line + ` ${x(pts.length - 1)},${h - 4}`;
   const recent = L.matches.filter(m => m.red.players.includes(id) || m.blue.players.includes(id)).slice(-8).reverse();
   $("modal-card").innerHTML = `
     <div class="mc-head">
@@ -296,17 +442,18 @@ function showPlayer(id) {
       <button class="mc-close" type="button" onclick="document.getElementById('modal').hidden=true">✕</button>
     </div>
     <div style="display:flex; gap:6px; flex-wrap:wrap">
-      <span class="chip">MMR <b style="color:var(--text)">${calc.mmr[id] ?? "-"}</b></span>
+      <span class="chip">MMR <b class="num" style="color:var(--text)">${calc.mmr[id] ?? "-"}</b></span>
       <span class="chip">${esc(p.pos ?? "포지션 미지정")}</span>
-      <span class="chip">${t ? esc(t.name) : "무소속"}</span>
+      <span class="chip" ${t ? `style="color:${t.color}; border-color:color-mix(in srgb, ${t.color} 35%, transparent)"` : ""}>${t ? esc(t.name) : "무소속"}</span>
       <span class="chip">${r.w}승 ${r.d}무 ${r.l}패${total ? ` · 승률 ${Math.round(r.w / total * 100)}%` : ""}</span>
       <span class="chip">최초 배치 ${esc(p.initialTier ?? "-")}</span>
     </div>
     <svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="MMR 추이">
-      <polyline points="${line}" fill="none" stroke="#00e0b8" stroke-width="2"/>
-      ${pts.length ? `<circle cx="${x(pts.length - 1)}" cy="${y(pts[pts.length - 1])}" r="3.5" fill="#00e0b8"/>` : ""}
+      <polygon points="${area}" fill="rgba(0,229,176,.09)"/>
+      <polyline points="${line}" fill="none" stroke="#00e5b0" stroke-width="2"/>
+      ${pts.length ? `<circle cx="${x(pts.length - 1)}" cy="${y(pts[pts.length - 1])}" r="3.5" fill="#00e5b0"/>` : ""}
     </svg>
-    <div style="display:flex; flex-direction:column; gap:5px">
+    <div style="display:flex; flex-direction:column; gap:6px">
       ${recent.map(m => {
         const mc = calc.matchCalc[m.id] || {};
         const d = mc.delta?.[id] ?? 0;
@@ -314,19 +461,36 @@ function showPlayer(id) {
         const bn = m.blue.team != null ? teamName(m.blue.team) : (m.blue.name || "블루");
         const mySide = m.red.players.includes(id) ? "red" : "blue";
         const outcome = m.result === "draw" ? "무" : m.result === mySide ? "승" : "패";
-        return `<div style="display:flex; gap:8px; font-size:12px; color:var(--muted); align-items:center">
-          <span class="chip" style="font-size:10px">${m.date || ""} ${m.type}</span>
+        return `<div style="display:flex; gap:9px; font-size:12.5px; color:var(--muted); align-items:center">
+          <span class="chip" style="font-size:10.5px">${m.date || ""} ${m.type}</span>
           <span style="flex:1">${esc(rn)} vs ${esc(bn)}</span>
-          <b style="color:${outcome === "승" ? "#3ddc97" : outcome === "패" ? "var(--danger)" : "var(--dim)"}">${outcome}</b>
-          <span style="font-weight:800; color:${d > 0 ? "#3ddc97" : d < 0 ? "var(--danger)" : "var(--dim)"}">${d > 0 ? "+" + d : d}</span>
+          <b style="color:${outcome === "승" ? "var(--up)" : outcome === "패" ? "var(--danger)" : "var(--dim)"}">${outcome}</b>
+          <span class="num" style="font-weight:700; color:${d > 0 ? "var(--up)" : d < 0 ? "var(--danger)" : "var(--dim)"}">${d > 0 ? "+" + d : d}</span>
         </div>`;
-      }).join("") || '<span class="empty" style="padding:10px 0">경기 기록 없음</span>'}
+      }).join("") || '<span class="empty" style="padding:12px 0">경기 기록 없음</span>'}
     </div>`;
   $("modal").hidden = false;
 }
 $("modal").onclick = e => { if (e.target.id === "modal") $("modal").hidden = true; };
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("modal").hidden = true; });
 
 boot();
 </script>
+
+<style>
+  /* ── 반응형 ── */
+  @media (max-width: 760px){
+    .rate-head h2{font-size:30px}
+    .podium{grid-template-columns:1fr 1fr; gap:10px; padding-top:14px}
+    .podium::before{width:340px; height:340px; top:-20px}
+    .podium .p-card.r1{grid-column:1 / -1; order:-1}
+    .p-card{padding:18px 12px 14px}
+    .p-name{font-size:20px} .p-card.r1 .p-name{font-size:27px}
+    .p-mmr{font-size:30px} .p-card.r1 .p-mmr{font-size:42px}
+    .r-row .rc{display:none}
+    .tc-head b{font-size:19px}
+    .tabs{width:100%} .tab{flex:1; padding:9px 0}
+  }
+</style>
 </body>
 </html>

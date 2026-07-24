@@ -20,6 +20,9 @@
     "C-": { mmr: 2100, sal: 15, cap: null },   // 최하위 받이 — 정원 없음
   };
   const HI_TIERS = ["S", "A+", "A", "A-"];               // S~A- (로스터 상한 판정)
+  /* 비공식 경기 자격 (기획안 8-1/8-2) — 두 구간이 10개 티어를 정확히 양분한다 */
+  const PRO_TIERS = ["S", "A+", "A", "A-", "B+"];        // 프로: S~B+
+  const AMA_TIERS = ["B", "B-", "C+", "C", "C-"];        // 아마추어: B~C-
   const groupOf = tier => tier ? tier[0] : null;         // "A-" → "A"
 
   /* ── 스킬 마스터 (고정 54종 — 리그와 무관, 불변) ── */
@@ -37,6 +40,15 @@
   for (const [tier, list] of Object.entries(SKILL_MASTER))
     for (const [name, icon] of list) { SKILL_ICON[name] = icon; SKILL_TIER_DEFAULT[name] = tier; }
 
+  /* ── 기능 모듈 (유니티 컴포넌트처럼 리그별로 켜고 끄기 — 끄면 화면만 숨고 데이터는 보존) ── */
+  const FEATURE_DEFS = [
+    { key: "board", label: "팀 편성",      desc: "팀 관리 — 인원·코인(포인트)·트레이드 + 팀 순위표" },
+    { key: "skill", label: "스킬 관리",    desc: "스킬 티어 설정 · 팀 스킬 보유/구매 · 경기 스킬 기록" },
+    { key: "draft", label: "경매 드래프트", desc: "코인 경매로 로스터 구성 (자동 진행 툴)" },
+  ];
+  /* 켜짐 판정 — features가 없는 옛 리그는 전부 켜진 것으로 취급 */
+  const featOn = (league, key) => !league.features || league.features[key] !== false;
+
   /* ── 리그 규칙 기본값 (config — 전부 리그별 수정 가능) ── */
   const CONFIG_DEFAULT = {
     win: 30, lose: 30, draw: 0,                       // 기본 승/패/무 포인트
@@ -45,10 +57,11 @@
     udStrongWin: 20, udStrongLose: 40,                // 강팀 승/패
     salaryCap: 90,                                    // 출전 4인 급여 상한 (팀별 +cap_bonus)
     rosterCap: { total: 9, hi: 4, lo: 7, skill: 13 }, // 총원(감독 포함)/S~A-/B+~C-/스킬 소유
-    skillCap: { S: 2, A: 4, B: 6, C: 6 },             // 티어별 스킬 소유 상한
+    skillCap: { S: 2, A: 4, B: 4, C: 4 },             // 티어별 스킬 소유 상한 (기획안 3-3·4-3)
     skillPrice: { S: 50, A: 30, B: 20, C: 10 },       // 시즌 중 스킬 구매 가격
     auctionLimit: { S: 2, A: 2, B: 6, C: 6 },         // 경매 팀당 티어별 획득 상한 (감독 제외)
-    coinR1: 100, coinR2: 50, coinCarry: true,         // 드래프트 라운드별 지급 코인 / 잔여 이월
+    coinR1: 200, coinR2: 200, coinCarry: true,        // 드래프트 라운드별 지급 코인 / 잔여 이월 (기획안 3-2)
+    gaugePerUse: 5,                                   // 벤/리로드 게이지 5개 = 1회 사용 (기획안 4-3)
     dormancyPenalty: 200,                             // 휴면 강등 -200p (M2)
     positions: ["공격", "미드", "수비"],               // 주 포지션 선택지
     showCoinsPublic: true,                            // 공개 팀 순위에 코인 노출 (확정: 노출)
@@ -64,11 +77,12 @@
       start: start || "", end: end || "",      // 기간 — 진행 중에도 수정 가능
       status: "active",                        // active | archived
       createdAt: new Date().toISOString(),
+      features: { board: true, skill: true, draft: true },
       config: JSON.parse(JSON.stringify(CONFIG_DEFAULT)),
       tiers,                                   // 티어별 {mmr(스타트), sal, cap}
       skillTier: { ...SKILL_TIER_DEFAULT },    // 스킬명 → S/A/B/C (리그별)
       players: [],  // {id, userId, name, tier, initialTier, pos, team, price, round, promoCredited, active}
-      teams: [],    // {id, name, coach, managerId, color, coins, capBonus, skills:[], active}
+      teams: [],    // {id, name, coach, managerId, color, coins, gauge, capBonus, skills:[], active}
       draft: { started: false, done: false, round: 1, queue: [], poolR2: [], log: [] },
       matches: [],  // {id, date, week, type, red:{team,name,players,skills}, blue:{...}, result}
       adjusts: [],  // mmr_adjust: {id, playerId, delta, reason, at(date)} — 재계산 시 경기와 시간순 리플레이
@@ -179,8 +193,9 @@
   }
 
   return {
-    TIER_ORDER, TIER_DEFAULT, HI_TIERS, groupOf,
+    TIER_ORDER, TIER_DEFAULT, HI_TIERS, PRO_TIERS, AMA_TIERS, groupOf,
     SKILL_MASTER, SKILL_ICON, SKILL_TIER_DEFAULT,
+    FEATURE_DEFS, featOn,
     CONFIG_DEFAULT, newLeague,
     weekOf, recalc, rankings, standings,
   };

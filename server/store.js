@@ -84,6 +84,14 @@ function loadLeague(id) {
 function saveLeague(league) {
   writeAtomic(leagueFile(league.id), league);
 }
+function deleteLeague(id) {
+  const file = leagueFile(id);
+  if (!fs.existsSync(file)) return false;
+  lastSnapshotAt.delete(file);   // 스로틀 무시 — 삭제 직전 상태를 반드시 남긴다
+  snapshot(file);
+  fs.unlinkSync(file);
+  return true;
+}
 function createLeague(sys, name, start, end) {
   const id = sys.seq.league++;
   const league = Engine.newLeague(id, name, start, end);
@@ -95,5 +103,5 @@ function createLeague(sys, name, start, end) {
 module.exports = {
   DATA_DIR, BACKUP_DIR,
   loadSystem, saveSystem,
-  listLeagues, loadLeague, saveLeague, createLeague,
+  listLeagues, loadLeague, saveLeague, createLeague, deleteLeague,
 };

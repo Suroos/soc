@@ -221,6 +221,11 @@ async function handleApi(req, res, pathname) {
     store.saveLeague(body);
     return json(res, 200, { ok: true, rev: body.rev });
   }
+  if (req.method === "DELETE" && mLeague) {
+    const id = Number(mLeague[1]);
+    if (!store.deleteLeague(id)) return json(res, 404, { error: "리그 없음" });
+    return json(res, 200, { ok: true });
+  }
   const mMeta = pathname.match(/^\/api\/league\/(\d+)\/meta$/);
   if (req.method === "PATCH" && mMeta) {
     const league = store.loadLeague(Number(mMeta[1]));
