@@ -9,7 +9,12 @@ const path = require("node:path");
 const store = require("./store.js");
 
 const PORT = Number(process.env.PORT) || 3300;
+/* 기본은 루프백만 — 외부 공개는 cloudflared 터널을 통해서만 (LAN 평문 접속 차단).
+   굳이 LAN에 열려면 HOST=0.0.0.0 으로 실행 (이 경우 프록시 헤더는 신뢰하지 않음) */
+const HOST = process.env.HOST || "127.0.0.1";
+const TRUST_PROXY = ["127.0.0.1", "::1", "localhost"].includes(HOST);
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
+const PUBLIC_ROOT = PUBLIC_DIR + path.sep;   // 형제 폴더(public.bak 등) 오탐 방지
 const MAX_BODY = 5 * 1024 * 1024;           // 리그 상태 전체 PUT 대비 5MB
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12시간
 
@@ -29,9 +34,12 @@ function newSession() {
   sessions.set(sid, Date.now() + SESSION_TTL_MS);
   return sid;
 }
-function isAuthed(req) {
-  const sid = (req.headers.cookie || "").split(";")
+function getSid(req) {
+  return (req.headers.cookie || "").split(";")
     .map(s => s.trim()).find(s => s.startsWith("sid="))?.slice(4);
+}
+function isAuthed(req) {
+  const sid = getSid(req);
   if (!sid) return false;
   const exp = sessions.get(sid);
   if (!exp || exp < Date.now()) { sessions.delete(sid); return false; }
@@ -39,10 +47,35 @@ function isAuthed(req) {
   return true;
 }
 
+/* ── 세션 쿠키 ──
+   터널(HTTPS) 경유일 때만 Secure — http://localhost 직접 접속에서도 로그인이 되도록 */
+function setSessionCookie(req, sid) {
+  const proto = TRUST_PROXY
+    ? String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim()
+    : "";
+  const secure = proto === "https" ? "; Secure" : "";
+  return { "Set-Cookie": `sid=${sid}; HttpOnly; Path=/; SameSite=Strict${secure}` };
+}
+
+/* ── 클라이언트 IP ──
+   루프백 바인딩이면 원격 요청은 전부 cloudflared 경유이고, Cloudflare가 엣지에서
+   CF-Connecting-IP를 덮어쓰므로 신뢰 가능. HOST를 직접 연 경우엔 소켓 IP만 사용 */
+function clientIp(req) {
+  if (TRUST_PROXY) {
+    const cf = req.headers["cf-connecting-ip"];
+    if (cf) return String(cf).trim();
+    const xff = req.headers["x-forwarded-for"];
+    if (xff) return String(xff).split(",")[0].trim();
+  }
+  return req.socket.remoteAddress || "?";
+}
+
 /* ── 로그인 레이트리밋 (IP당 1분에 5회) ── */
 const loginHits = new Map();
 function loginAllowed(ip) {
   const now = Date.now();
+  for (const [k, v] of loginHits)                       // 만료된 IP 정리 (무한 증가 방지)
+    if (!v.length || now - v[v.length - 1] >= 60_000) loginHits.delete(k);
   const hits = (loginHits.get(ip) || []).filter(t => now - t < 60_000);
   hits.push(now);
   loginHits.set(ip, hits);
@@ -82,7 +115,7 @@ function serveStatic(req, res, pathname) {
   if (rel === "/") rel = "/index.html";
   if (rel === "/admin") rel = "/admin.html";
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
-  if (!file.startsWith(PUBLIC_DIR)) return json(res, 403, { error: "forbidden" });
+  if (!file.startsWith(PUBLIC_ROOT)) return json(res, 403, { error: "forbidden" });
   fs.readFile(file, (err, buf) => {
     if (err) return json(res, 404, { error: "not found" });
     res.writeHead(200, { "Content-Type": MIME[path.extname(file).toLowerCase()] || "application/octet-stream" });
@@ -94,7 +127,7 @@ function serveStatic(req, res, pathname) {
 async function handleApi(req, res, pathname) {
   const sys = store.loadSystem();
   const authed = isAuthed(req);
-  const ip = req.socket.remoteAddress || "?";
+  const ip = clientIp(req);
   const mLeague = pathname.match(/^\/api\/league\/(\d+)$/);
 
   // ---- 인증 불필요 ----
@@ -113,15 +146,17 @@ async function handleApi(req, res, pathname) {
     sys.adminSalt = crypto.randomBytes(16).toString("hex");
     sys.adminHash = hashPw(password, sys.adminSalt);
     store.saveSystem(sys);
-    return json(res, 200, { ok: true }, { "Set-Cookie": `sid=${newSession()}; HttpOnly; Path=/; SameSite=Strict` });
+    return json(res, 200, { ok: true }, setSessionCookie(req, newSession()));
   }
   if (req.method === "POST" && pathname === "/api/login") {
     if (!loginAllowed(ip)) return json(res, 429, { error: "시도 횟수 초과 — 1분 후 다시" });
     const { password } = await readBody(req);
     if (!verifyPw(sys, password || "")) return json(res, 401, { error: "비밀번호가 다릅니다" });
-    return json(res, 200, { ok: true }, { "Set-Cookie": `sid=${newSession()}; HttpOnly; Path=/; SameSite=Strict` });
+    return json(res, 200, { ok: true }, setSessionCookie(req, newSession()));
   }
   if (req.method === "POST" && pathname === "/api/logout") {
+    const sid = getSid(req);
+    if (sid) sessions.delete(sid);          // 쿠키만 지우면 서버 세션이 살아남는다
     return json(res, 200, { ok: true }, { "Set-Cookie": "sid=; HttpOnly; Path=/; Max-Age=0" });
   }
   // 리그 조회는 공개 (조회 전용 페이지가 사용)
@@ -140,7 +175,8 @@ async function handleApi(req, res, pathname) {
     sys.adminSalt = crypto.randomBytes(16).toString("hex");
     sys.adminHash = hashPw(newPassword, sys.adminSalt);
     store.saveSystem(sys);
-    return json(res, 200, { ok: true });
+    sessions.clear();                       // 비번을 바꾸면 다른 기기·탈취된 세션도 전부 끊는다
+    return json(res, 200, { ok: true }, setSessionCookie(req, newSession()));  // 지금 이 브라우저만 재발급
   }
   if (req.method === "POST" && pathname === "/api/users") {
     const { name } = await readBody(req);
@@ -211,5 +247,5 @@ const server = http.createServer(async (req, res) => {
     json(res, 500, { error: e.message || "server error" });
   }
 });
-server.listen(PORT, () =>
-  console.log(`초축 리그 서버 가동 — http://localhost:${PORT} (데이터: ${store.DATA_DIR})`));
+server.listen(PORT, HOST, () =>
+  console.log(`초축 리그 서버 가동 — http://localhost:${PORT} (바인딩: ${HOST}, 데이터: ${store.DATA_DIR})`));
