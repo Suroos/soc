@@ -118,7 +118,14 @@ function serveStatic(req, res, pathname) {
   if (!file.startsWith(PUBLIC_ROOT)) return json(res, 403, { error: "forbidden" });
   fs.readFile(file, (err, buf) => {
     if (err) return json(res, 404, { error: "not found" });
-    res.writeHead(200, { "Content-Type": MIME[path.extname(file).toLowerCase()] || "application/octet-stream" });
+    const ext = path.extname(file).toLowerCase();
+    /* 앱 코드(html/js/css)는 매번 재검증 — 안 그러면 CDN(Cloudflare)이 몇 시간씩 옛 버전을 서빙해
+       admin.html만 갱신되고 engine.js는 옛것인 상태가 생긴다. 이미지·폰트는 길게 캐싱한다. */
+    const code = [".html", ".js", ".css", ".json"].includes(ext);
+    res.writeHead(200, {
+      "Content-Type": MIME[ext] || "application/octet-stream",
+      "Cache-Control": code ? "no-cache, must-revalidate" : "public, max-age=604800",
+    });
     res.end(buf);
   });
 }
